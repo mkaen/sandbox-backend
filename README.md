@@ -1,4 +1,4 @@
-# vibe-backend
+# sandbox-backend
 This is main backend repo for vibecoding
 
 ## Run
@@ -12,7 +12,7 @@ fastapi run    # production
 ## Structure
 
 ```
-vibe-backend/
+sandbox-backend/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI rakenduse loomine + middleware registreerimine

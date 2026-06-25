@@ -8,7 +8,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    PROJECT_NAME: str = "vibe-backend"
+    PROJECT_NAME: str = "sandbox-backend"
     DATABASE_URL: str
     SECRET_KEY: str
     CORS_ORIGINS: list[str] = ["http://localhost:8080"]
