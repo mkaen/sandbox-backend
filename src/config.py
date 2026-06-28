@@ -1,9 +1,6 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -13,18 +10,21 @@ class Settings(BaseSettings):
     )
 
     PROJECT_NAME: str = "sandbox-backend"
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
-    SECRET_KEY: str = os.getenv("SECRET_KEY")
-    CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
+    DATABASE_URL: str
+    SECRET_KEY: str
+    CORS_ORIGINS: list[str] = ["http://localhost:8080"]
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
+    JWT_SIGNING_ALGORITHM: str = "HS256"
+    COOKIE_NAME: str = "mk_access_token"
+    COOKIE_SECURE: bool = False  # True production-is
+    DB_ECHO: bool = True
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value):
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
 
 settings = Settings()
-
-# Here, you create a Settings class that reads variables from a .env file. This way, you keep secrets and 
-# environment-specific settings (like your database URL or secret keys) outside your codebase, improving 
-# security and flexibility.
-
-# You can then import settings anywhere in your app without duplicating environment handling code. 
-# If you deploy to staging or production, you only need to swap .env files or environment variables.
-
-# You might also add a security.py file here for reusable helpers, like JWT token management or OAuth scopes, 
-# keeping all security-related configuration in one place.

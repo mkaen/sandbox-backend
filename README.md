@@ -4,7 +4,7 @@ This is main backend repo for vibecoding
 ## Run
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 fastapi dev    # development (auto-reload)
 fastapi run    # production
 ```
@@ -37,6 +37,5 @@ sandbox-backend/
 │
 ├── tests/
 ├── .env
-├── pyproject.toml       # fastapi dev / fastapi run entrypoint
-└── requirements.txt
+└── pyproject.toml       # sõltuvused + fastapi dev / fastapi run entrypoint
 ```
