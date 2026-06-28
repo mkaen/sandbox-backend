@@ -18,6 +18,7 @@ def create_app():
 
     _register_middleware(app)
     _register_routers(app)
+    
 
     return app
 

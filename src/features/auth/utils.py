@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from src.config import settings
 import jwt
 from pwdlib import PasswordHash
 from datetime import datetime, timedelta, timezone
@@ -7,7 +8,7 @@ from fastapi import Response
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = settings.SECRET_KEY
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 ALGORITHM = os.getenv("ALGORITHM")
 

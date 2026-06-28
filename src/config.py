@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -9,9 +13,9 @@ class Settings(BaseSettings):
     )
 
     PROJECT_NAME: str = "sandbox-backend"
-    DATABASE_URL: str
-    SECRET_KEY: str
-    CORS_ORIGINS: list[str] = ["http://localhost:8080"]
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    SECRET_KEY: str = os.getenv("SECRET_KEY")
+    CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
 
 settings = Settings()
 

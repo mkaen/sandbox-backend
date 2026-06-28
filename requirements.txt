@@ -5,4 +5,7 @@ sqlalchemy[asyncio]>=2.0
 PyJWT>=2.13
 python-dotenv>=1.0
 pwdlib[argon2]>=0.3
+sqlmodel>=0.0.39
+psycopg2-binary>=2.9.10
+alembic>=1.18.5
 
