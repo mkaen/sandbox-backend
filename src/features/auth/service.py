@@ -23,7 +23,8 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
             last_name=created_user.last_name,
             phone=created_user.phone,
             email=created_user.email,
-            image_reference=created_user.image_reference
+            image_reference=created_user.image_reference,
+            role=created_user.role,
         )
     else:
         raise HTTPException(status_code=500, detail="Failed to create user")
@@ -47,12 +48,13 @@ def authenticate_user(data: LoginRequestSchema, response: Response, db: Session)
 
     access_token = create_access_token({"sub": data.email})
     set_access_token_cookie(response, access_token)
-    
+
     return AuthorizedUserResponseSchema(
         id=user.id,
         first_name=user.first_name,
         last_name=user.last_name,
         phone=user.phone,
         email=user.email,
-        image_reference=user.image_reference
+        image_reference=user.image_reference,
+        role=user.role,
     )

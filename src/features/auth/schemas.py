@@ -1,3 +1,4 @@
+from src.constants import UserRoles
 from features.auth.utils import generate_image_reference
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
 
@@ -114,3 +115,4 @@ class AuthorizedUserResponseSchema(BaseModel):
     phone: str 
     email: EmailStr
     image_reference: str = Field(alias="imageReference", default=None)
+    role: UserRoles = Field(alias="role")
