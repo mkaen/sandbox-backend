@@ -1,4 +1,0 @@
-fastapi>=0.137
-uvicorn[standard]>=0.49
-pydantic-settings>=2.14
-sqlalchemy[asyncio]>=2.0

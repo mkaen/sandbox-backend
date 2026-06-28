@@ -1,0 +1,24 @@
+### Variables (edit base URL if your server runs elsewhere)
+@baseUrl = http://127.0.0.1:8000
+
+### Register user
+POST {{baseUrl}}/v1/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "phone": "+3725551234",
+  "email": "jane.doe@example.com",
+  "password": "secret123",
+  "hasImage": false
+}
+
+### Login user
+POST {{baseUrl}}/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "password": "secret123"
+}
