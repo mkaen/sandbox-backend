@@ -33,10 +33,11 @@ class RegisterRequestSchema(BaseModel):
     phone: str 
     email: EmailStr
     password: str
-    has_image: bool = Field(
+    has_image: str | None = Field(
         alias="hasImage",
-        description="If user has an image, generate reference (uuid) and return it to frontend"
-        )
+        default=None,
+        description="If user has an image, generate reference (uuid) and return it to frontend",
+    )
     
     
     @field_validator("first_name")
@@ -97,13 +98,12 @@ class RegisterRequestSchema(BaseModel):
             raise ValueError("Email must be less than 40 characters long")
         return value
 
-    @field_validator("has_image")
-    def validate_has_image(cls, value: bool):
+    @field_validator("has_image", mode="before")
+    @classmethod
+    def set_has_image_value(cls, value: bool | str | None):
         if value:
-            print(f"Generating image reference: {value}")
             return generate_image_reference()
-        else:
-            return ""
+        return None
 
 
 class AuthorizedUserResponseSchema(BaseModel):
@@ -114,5 +114,5 @@ class AuthorizedUserResponseSchema(BaseModel):
     last_name: str = Field(alias="lastName")
     phone: str 
     email: EmailStr
-    image_reference: str = Field(alias="imageReference", default=None)
+    image_reference: str | None = Field(alias="imageReference", default=None)
     role: UserRoles = Field(alias="role")
