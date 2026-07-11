@@ -115,4 +115,4 @@ class AuthorizedUserResponseSchema(BaseModel):
     phone: str 
     email: EmailStr
     image_reference: str | None = Field(alias="imageReference", default=None)
-    role: UserRoles = Field(alias="role")
+    role: UserRoles
