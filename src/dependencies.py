@@ -6,10 +6,11 @@ from src.config import settings
 from src.core.security import decode_access_token
 from src.db.database import get_db
 from src.db.models import User
+from src.features.users.repository import get_user_by_id
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    token = request.cookies.get(settings.COOKIE_NAME)
+    token = request.cookies.get(settings.ACCESS_TOKEN_COOKIE_NAME)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -24,14 +25,14 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
             detail="Invalid token, could not decode",
         )
 
-    email = payload.get("sub")
-    if not email:
+    user_id = payload.get("sub")
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token, no email found",
+            detail="Invalid token, no user id found",
         )
 
-    user = db.query(User).filter(User.email == email).first()
+    user = get_user_by_id(db, int(user_id))
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

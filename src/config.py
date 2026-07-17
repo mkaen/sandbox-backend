@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     CORS_ORIGINS: list[str] = ["http://localhost:8080"]
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     JWT_SIGNING_ALGORITHM: str = "HS256"
-    COOKIE_NAME: str = "mk_access_token"
+    ACCESS_TOKEN_COOKIE_NAME: str = "access_token"
+    REFRESH_TOKEN_COOKIE_NAME: str = "refresh_token"
     COOKIE_SECURE: bool = False  # True production-is
     DB_ECHO: bool = True
 
