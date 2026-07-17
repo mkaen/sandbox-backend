@@ -25,7 +25,7 @@ SECRET_KEY=change-me-to-a-long-random-string
 CORS_ORIGINS=http://localhost:8080
 ACCESS_TOKEN_EXPIRE_MINUTES=10
 JWT_SIGNING_ALGORITHM=HS256
-COOKIE_NAME=mk_access_token
+ACCESS_TOKEN_COOKIE_NAME=access_token
 COOKIE_SECURE=false
 DB_ECHO=true
 ```

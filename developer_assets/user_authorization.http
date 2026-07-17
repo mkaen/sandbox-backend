@@ -22,3 +22,9 @@ Content-Type: application/json
   "email": "jane.doe@example.com",
   "password": "secret123"
 }
+
+### Refresh access token (uses refresh token cookie from login/register)
+POST {{baseUrl}}/v1/auth/refresh
+
+### Logout (revokes refresh token and clears cookies)
+POST {{baseUrl}}/v1/auth/logout

@@ -38,3 +38,16 @@ def get_user_by_email(db: Session, email: EmailStr) -> User:
         User: User object or None
     """
     return db.query(User).filter(User.email == email).first()
+
+
+def get_user_by_id(db: Session, user_id: int) -> User:
+    """
+    Get a user by id.
+    Args:
+        db: Session
+        user_id: int
+    Returns:
+        User: User object or None
+    """
+    return db.query(User).filter(User.id == user_id).first()
+    
