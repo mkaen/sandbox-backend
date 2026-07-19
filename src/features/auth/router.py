@@ -10,7 +10,7 @@ from src.features.auth.schemas import AuthorizedUserResponseSchema, LoginRequest
 auth_router_v1 = APIRouter(prefix="/v1/auth", tags=["auth"])
 
 
-@auth_router_v1.post("/login", status_code=200)
+@auth_router_v1.post("/login", status_code=200, summary="Login user")
 async def login(
     login_request: LoginRequestSchema,
     response: Response,
@@ -19,7 +19,7 @@ async def login(
     return service.authenticate_user(login_request, response, db)
 
 
-@auth_router_v1.post("/register", status_code=201)
+@auth_router_v1.post("/register", status_code=201, summary="Register new user")
 async def register(
     registration_data: RegisterRequestSchema,
     response: Response,
@@ -28,7 +28,7 @@ async def register(
     return service.register_user(registration_data, response, db)
 
 
-@auth_router_v1.post("/refresh", status_code=200)
+@auth_router_v1.post("/refresh", status_code=200, summary="Refresh access and refresh token")
 async def refresh(
     request: Request,
     response: Response,
@@ -37,7 +37,7 @@ async def refresh(
     return service.refresh_access_token(request, response, db)
 
 
-@auth_router_v1.post("/logout", status_code=204)
+@auth_router_v1.post("/logout", status_code=204, summary="Logout user")
 async def logout(
     request: Request,
     response: Response,
