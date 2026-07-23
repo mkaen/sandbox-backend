@@ -14,12 +14,13 @@ from src.core.security import (
 )
 from src.db.models import User
 from src.features.auth.repository import create_refresh_token, get_refresh_token, revoke_refresh_token
-from src.features.auth.schemas import AuthorizedUserResponseSchema, LoginRequestSchema, RegisterRequestSchema
+from src.features.auth.schemas import LoginRequestSchema, RegisterRequestSchema
 from src.features.users.repository import create_user, get_user_by_email, get_user_by_id
+from src.features.users.schemas import UserResponseSchema
 
 
-def _user_response(user: User) -> AuthorizedUserResponseSchema:
-    return AuthorizedUserResponseSchema(
+def _user_response(user: User) -> UserResponseSchema:
+    return UserResponseSchema(
         id=user.id,
         first_name=user.first_name,
         last_name=user.last_name,

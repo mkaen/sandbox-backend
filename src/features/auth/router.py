@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from src.db.database import get_db
 from src.features.auth import service
-from src.features.auth.schemas import AuthorizedUserResponseSchema, LoginRequestSchema, RegisterRequestSchema
+from src.features.auth.schemas import LoginRequestSchema, RegisterRequestSchema
+from src.features.users.schemas import UserResponseSchema
 
 auth_router_v1 = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -15,7 +16,7 @@ async def login(
     login_request: LoginRequestSchema,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-) -> AuthorizedUserResponseSchema:
+) -> UserResponseSchema:
     return service.authenticate_user(login_request, response, db)
 
 
@@ -24,7 +25,7 @@ async def register(
     registration_data: RegisterRequestSchema,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-) -> AuthorizedUserResponseSchema:
+) -> UserResponseSchema:
     return service.register_user(registration_data, response, db)
 
 
@@ -33,7 +34,7 @@ async def refresh(
     request: Request,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-) -> AuthorizedUserResponseSchema:
+) -> UserResponseSchema:
     return service.refresh_access_token(request, response, db)
 
 
