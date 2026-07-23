@@ -107,7 +107,7 @@ class RegisterRequestSchema(BaseModel):
 
 
 class AuthorizedUserResponseSchema(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: int
     first_name: str = Field(alias="firstName")
