@@ -1,5 +1,8 @@
+from typing import Annotated
+
 import jwt
 from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.config import settings
@@ -8,9 +11,17 @@ from src.db.database import get_db
 from src.db.models import User
 from src.features.users.repository import get_user_by_id
 
+bearer_scheme = HTTPBearer(auto_error=False)
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    token = request.cookies.get(settings.ACCESS_TOKEN_COOKIE_NAME)
+
+def get_current_user(
+    request: Request,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: Session = Depends(get_db),
+) -> User:
+    token = credentials.credentials if credentials else request.cookies.get(
+        settings.ACCESS_TOKEN_COOKIE_NAME
+    )
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
