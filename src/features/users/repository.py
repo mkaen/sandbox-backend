@@ -1,3 +1,4 @@
+from constants import UserRoles
 from fastapi import HTTPException
 from features.auth.utils import hash_password
 from src.db.models import User
@@ -50,4 +51,13 @@ def get_user_by_id(db: Session, user_id: int) -> User:
         User: User object or None
     """
     return db.query(User).filter(User.id == user_id).first()
+
+
+def set_user_role(db: Session, user_id: int, role: UserRoles):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Cannot fetch user by id {user_id}.")
+    if role and user.role != role:
+        user.role = role
+        return role
     
