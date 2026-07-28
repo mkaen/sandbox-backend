@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -30,7 +30,7 @@ async def get_user_by_id(
 
 
 @router_v1.put("/update/{user_id}", status_code=200)
-async def updater_user_data(
+async def update_user_data(
     user_id: int,
     request: Request,
     current_user: Annotated[User, Depends(require_self_or_admin)],
@@ -49,3 +49,13 @@ async def updater_user_data(
         raise RequestValidationError(e.errors())
 
     return service.update_user_data(user_id, current_user, db, data)
+
+
+@router_v1.delete("/remove/{user_id}", status_code=200)
+async def remove_account(
+    user_id: int,
+    current_user: Annotated[User, Depends(require_self_or_admin)],
+    db: Annotated[Session, Depends(get_db)],
+    response: Response,
+) -> bool:
+    return service.remove_account(user_id, current_user, db, response)
