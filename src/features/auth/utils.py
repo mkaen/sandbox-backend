@@ -25,6 +25,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
 
-def generate_image_reference() -> str:
+def generate_image_reference() -> uuid.UUID:
     """Generate a unique image reference using UUID4"""
-    return str(uuid.uuid4())
+    return uuid.uuid4()

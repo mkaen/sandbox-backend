@@ -1,9 +1,11 @@
+from constants import UserRoles
 from fastapi import HTTPException
 from features.auth.utils import hash_password
 from src.db.models import User
 from sqlalchemy.orm import Session
 from pydantic import EmailStr
 from src.features.auth.schemas import RegisterRequestSchema
+from src.features.users.utils import create_deacticated_email
 
 
 def create_user(db: Session, user: RegisterRequestSchema) -> User:
@@ -50,4 +52,18 @@ def get_user_by_id(db: Session, user_id: int) -> User:
         User: User object or None
     """
     return db.query(User).filter(User.id == user_id).first()
-    
+
+
+def set_user_role(db: Session, user_id: int, role: UserRoles):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Cannot fetch user by id {user_id}.")
+    if role and user.role != role:
+        user.role = role
+        return role
+
+
+def deactivate_account(user: User, db: Session) -> None:
+    user.is_active = False
+    user.email = create_deacticated_email(user.id, user.email)
+    db.commit()
