@@ -1,5 +1,5 @@
 from src.constants import UserRoles
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Enum
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Enum, Uuid
 from sqlalchemy.sql import func
 from src.db.database import Base
 
@@ -24,7 +24,8 @@ class User(Base):
     phone = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    image_reference = Column(String, nullable=True)
+    image_reference = Column(Uuid, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
     role = Column(Enum(UserRoles, name='userroles'), default=UserRoles.USER, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)

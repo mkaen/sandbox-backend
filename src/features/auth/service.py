@@ -13,7 +13,12 @@ from src.core.security import (
     set_refresh_token_cookie,
 )
 from src.db.models import User
-from src.features.auth.repository import create_refresh_token, get_refresh_token, revoke_refresh_token
+from src.features.auth.repository import (
+    create_refresh_token,
+    get_refresh_token,
+    revoke_all_refresh_tokens_for_user,
+    revoke_refresh_token,
+)
 from src.features.auth.schemas import LoginRequestSchema, RegisterRequestSchema
 from src.features.users.repository import create_user, get_user_by_email, get_user_by_id
 from src.features.users.schemas import UserResponseSchema
@@ -56,7 +61,7 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
 
 def authenticate_user(data: LoginRequestSchema, response: Response, db: Session):
     user = get_user_by_email(db, data.email)
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User with this email does not exist")
     if not verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Password is incorrect")
@@ -81,7 +86,7 @@ def refresh_access_token(request: Request, response: Response, db: Session):
         raise HTTPException(status_code=401, detail="Refresh token has expired")
 
     user = get_user_by_id(db, stored_token.user_id)
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found")
 
     revoke_refresh_token(db, token)
@@ -95,3 +100,7 @@ def logout_user(request: Request, response: Response, db: Session):
         revoke_refresh_token(db, token)
 
     clear_auth_cookies(response)
+
+
+def revoke_all_user_sessions(db: Session, user_id: int) -> None:
+    revoke_all_refresh_tokens_for_user(db, user_id)

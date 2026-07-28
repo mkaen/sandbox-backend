@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.constants import UserRoles
 from features.auth.utils import generate_image_reference
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
@@ -33,7 +35,7 @@ class RegisterRequestSchema(BaseModel):
     phone: str 
     email: EmailStr
     password: str
-    has_image: str | None = Field(
+    has_image: UUID | None = Field(
         alias="hasImage",
         default=None,
         description="If user has an image, generate reference (uuid) and return it to frontend",
@@ -100,7 +102,7 @@ class RegisterRequestSchema(BaseModel):
 
     @field_validator("has_image", mode="before")
     @classmethod
-    def set_has_image_value(cls, value: bool | str | None):
+    def set_has_image_value(cls, value: bool | UUID | None):
         if value:
             return generate_image_reference()
         return None
