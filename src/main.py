@@ -2,13 +2,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from src.core.middleware import register_middleware
 from src.api.router import api_router
+from src.core.logger import configure_logging, logger
 
+
+configure_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application is starting up...")
+    logger.info("Application is starting up...")
     yield
-    print("Application is shutting down...")
+    logger.info("Application is shutting down...")
 
 
 def create_app():
@@ -27,5 +30,3 @@ def _register_routers(app: FastAPI):
 
 
 app = create_app()
-
-

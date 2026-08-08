@@ -13,7 +13,8 @@ dependencies = [
     "python-dotenv>=1.0",
     "pwdlib[argon2]>=0.3",
     "psycopg2-binary>=2.9.10",
-    "alembic>=1.18.5"
+    "alembic>=1.18.5",
+    "python-json-logger>=4.1.0"
 ]
 
 [tool.fastapi]
