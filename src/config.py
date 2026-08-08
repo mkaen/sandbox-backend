@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     LOGGER_NAME: str = 'sandbox-backend'
     LOG_LEVEL: str = 'INFO'
     LOG_JSON: bool = True
-    LOGGER_FORMAT: str = '%(asctime)s - %(levelname)s - %(message)s'
     TIMEZONE: str = "Europe/Tallinn"
 
     @field_validator("CORS_ORIGINS", mode="before")
