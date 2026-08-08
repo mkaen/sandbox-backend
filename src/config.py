@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     )
 
     PROJECT_NAME: str = "sandbox-backend"
+    ENVIRONMENT: str = "development"
     DATABASE_URL: str
     SECRET_KEY: str
     CORS_ORIGINS: list[str] = ["http://localhost:8080"]
@@ -20,6 +21,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_COOKIE_NAME: str = "refresh_token"
     COOKIE_SECURE: bool = False  # True production-is
     DB_ECHO: bool = True
+    LOGGER_NAME: str = 'sandbox-backend'
+    LOG_LEVEL: str = 'INFO'
+    LOG_JSON: bool = True
+    LOGGER_FORMAT: str = '%(asctime)s - %(levelname)s - %(message)s'
+    TIMEZONE: str = "Europe/Tallinn"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
