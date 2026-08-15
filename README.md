@@ -179,6 +179,66 @@ Health check: `GET /health` → `{"status":"ok"}`.
 
 ---
 
+## Observability (local Grafana + Loki)
+
+Structured JSON logs from the app are collected by **Grafana Alloy** and stored in **Loki**. View them in **Grafana**.
+
+### 1. Run the app (separate terminal)
+
+```bash
+docker compose up --build -d
+# or production-style:
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+### 2. Start the observability stack
+
+```bash
+docker compose -f docker-compose.observability.yml up -d
+```
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Grafana | http://localhost:3000 | `admin` / `admin` |
+| Alloy UI | http://localhost:12345 | — |
+| Loki API | http://localhost:3100 | — |
+
+Alloy watches Docker containers named `sandbox-backend-dev` or `sandbox-backend-prod` via the Docker socket.
+
+### 3. View logs in Grafana
+
+1. Open http://localhost:3000 → **Explore** → datasource **Loki**
+2. Example queries:
+
+```logql
+{service="sandbox-backend"}
+```
+
+```logql
+{service="sandbox-backend"} | json | environment="development"
+```
+
+```logql
+{service="sandbox-backend"} | json | status_code >= 400
+```
+
+```logql
+{service="sandbox-backend"} | json | request_id="<paste-id-from-response-header>"
+```
+
+Generate traffic with API calls (or `developer_assets/user_authorization.http`) so request logs appear.
+
+### Stop
+
+```bash
+docker compose -f docker-compose.observability.yml down
+# Add -v to drop Grafana/Loki volumes
+```
+
+Config lives in `observability/` (`alloy.config.alloy`, `loki-config.yaml`, Grafana provisioning).
+
+---
+
 ## Migrations (Alembic)
 
 Migration scripts live in `alembic/versions/`.
@@ -271,6 +331,8 @@ sandbox-backend/
 ├── alembic.ini
 ├── docker-compose.yml          # Local development
 ├── docker-compose.prod.yml     # Live production
+├── docker-compose.observability.yml  # Local Loki + Grafana + Alloy
+├── observability/              # Alloy, Loki, Grafana provisioning
 ├── Dockerfile
 └── pyproject.toml              # Dependencies + FastAPI entrypoint (src.main:app)
 ```
