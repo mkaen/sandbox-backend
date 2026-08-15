@@ -274,3 +274,9 @@ sandbox-backend/
 ├── Dockerfile
 └── pyproject.toml              # Dependencies + FastAPI entrypoint (src.main:app)
 ```
+
+---
+
+## Before deployment to production
+
+Live’i juurde jõudes jäta meelde: .env.prod täidetud, HTTPS proxy ees, CORS_ORIGINS päris frontend, enne deploy’d alembic upgrade head prod baasi peal. Need ei ole Dockeri augud.
