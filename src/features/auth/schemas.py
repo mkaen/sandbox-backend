@@ -1,8 +1,8 @@
 from uuid import UUID
 
 from src.constants import UserRoles
-from features.auth.utils import generate_image_reference
-from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
+from src.features.auth.utils import generate_image_reference
+from pydantic import BaseModel, Field, EmailStr, field_validator
 
 class LoginRequestSchema(BaseModel):
     email: str

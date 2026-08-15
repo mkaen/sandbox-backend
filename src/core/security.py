@@ -25,7 +25,7 @@ def set_access_token_cookie(response: Response, access_token: str):
         httponly=True,
         secure=settings.COOKIE_SECURE,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
     )
 
 
@@ -36,7 +36,7 @@ def set_refresh_token_cookie(response: Response, refresh_token: str):
         httponly=True,
         secure=settings.COOKIE_SECURE,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
     )
 
 
@@ -45,13 +45,13 @@ def clear_auth_cookies(response: Response):
         key=settings.ACCESS_TOKEN_COOKIE_NAME,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
     )
     response.delete_cookie(
         key=settings.REFRESH_TOKEN_COOKIE_NAME,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
     )
 
 
