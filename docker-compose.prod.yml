@@ -1,0 +1,23 @@
+# Live production — run: docker compose -f docker-compose.prod.yml up --build -d
+#
+# Uses .env.prod. Run migrations in CI before deploy (they are not run by this container).
+
+name: sandbox-backend-prod
+
+services:
+  app:
+    build: .
+    container_name: sandbox-backend-prod
+    restart: unless-stopped
+    init: true
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    environment:
+      ENVIRONMENT: production
+      DB_ECHO: "false"
+      LOG_JSON: "true"
+      COOKIE_SECURE: "true"
+      POOL_PRE_PING: "true"
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 2

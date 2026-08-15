@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.137",
     "uvicorn[standard]>=0.49",
     "pydantic-settings>=2.14",
+    "email-validator>=2.2",
     "sqlalchemy>=2.0.51",
     "PyJWT>=2.13",
     "python-dotenv>=1.0",

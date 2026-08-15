@@ -13,6 +13,9 @@ from src.core.logger import logger
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        if request.url.path == "/health":
+            return await call_next(request)
+
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         correlation_id = request.headers.get("X-Correlation-ID") or request_id
 

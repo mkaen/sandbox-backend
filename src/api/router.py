@@ -4,5 +4,11 @@ from src.features.auth.router import auth_router_v1
 
 api_router = APIRouter()
 
+
+@api_router.get("/health", include_in_schema=False)
+def health():
+    return {"status": "ok"}
+
+
 api_router.include_router(users_router_v1)
 api_router.include_router(auth_router_v1)

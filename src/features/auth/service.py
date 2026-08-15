@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
-from features.auth.utils import verify_password
+from src.features.auth.utils import verify_password
 from src.config import settings
 from src.core.security import (
     clear_auth_cookies,
