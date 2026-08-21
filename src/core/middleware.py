@@ -3,62 +3,61 @@ import uuid
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.datastructures import MutableHeaders
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.config import settings
-from src.core.logger import logger
+from src.core.logger import logger, request_id_var
 
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
+class RequestLoggingMiddleware:
+    """Pure ASGI middleware so request_id contextvar is visible in handlers."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive)
         if request.url.path == "/health":
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
 
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         correlation_id = request.headers.get("X-Correlation-ID") or request_id
-
-        request.state.request_id = request_id
-        request.state.correlation_id = correlation_id
-
+        token = request_id_var.set(request_id)
         start = time.perf_counter()
         status_code = 500
 
-        try:
-            response = await call_next(request)
-            status_code = response.status_code
-        except Exception:
-            duration_ms = round((time.perf_counter() - start) * 1000)
-            logger.info(
-                f"{request.method} {request.url.path} {status_code} {duration_ms}ms",
-                extra={
-                    "request_id": request_id,
-                    "correlation_id": correlation_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status_code": status_code,
-                    "duration_ms": duration_ms,
-                },
-            )
-            raise
+        async def send_wrapper(message: dict) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+                headers = MutableHeaders(scope=message)
+                headers["X-Request-ID"] = request_id
+                headers["X-Correlation-ID"] = correlation_id
+            await send(message)
 
-        duration_ms = round((time.perf_counter() - start) * 1000)
-        logger.info(
-            f"{request.method} {request.url.path} {status_code} {duration_ms}ms",
-            extra={
-                "request_id": request_id,
-                "correlation_id": correlation_id,
+        try:
+            await self.app(scope, receive, send_wrapper)
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000)
+            extra = {
                 "method": request.method,
                 "path": request.url.path,
                 "status_code": status_code,
                 "duration_ms": duration_ms,
-            },
-        )
-
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Correlation-ID"] = correlation_id
-        return response
+            }
+            message = f"{request.method} {request.url.path} {status_code} {duration_ms}ms"
+            if status_code >= 500:
+                logger.error(message, extra=extra)
+            else:
+                logger.info(message, extra=extra)
+            request_id_var.reset(token)
 
 
 def register_middleware(app: FastAPI) -> None:
