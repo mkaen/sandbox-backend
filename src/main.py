@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from src.core.exception_handlers import register_exception_handlers
 from src.core.middleware import register_middleware
 from src.api.router import api_router
 from src.config import settings
@@ -24,6 +25,7 @@ def create_app():
         redoc_url=None if is_prod else "/redoc",
         openapi_url=None if is_prod else "/openapi.json",
     )
+    register_exception_handlers(app)
     register_middleware(app)
     app.include_router(api_router)
     return app

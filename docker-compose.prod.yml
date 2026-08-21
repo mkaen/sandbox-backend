@@ -8,6 +8,8 @@ services:
   app:
     build: .
     container_name: sandbox-backend-prod
+    labels:
+      logging.service: sandbox-backend
     restart: unless-stopped
     init: true
     ports:

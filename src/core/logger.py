@@ -1,30 +1,24 @@
 import logging
 import sys
+from contextvars import ContextVar
 
 from pythonjsonlogger.json import JsonFormatter
 
 from src.config import settings
 
+request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
+
 logger = logging.getLogger(settings.LOGGER_NAME)
 
 
-class AppContextFilter(logging.Filter):
-    """Add default field values for structured logging."""
-
-    _DEFAULTS = {
-        "environment": lambda: settings.ENVIRONMENT,
-        "request_id": lambda: None,
-        "correlation_id": lambda: None,
-        "method": lambda: None,
-        "path": lambda: None,
-        "status_code": lambda: None,
-        "duration_ms": lambda: None,
-    }
-
+class RequestContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        for field, default in self._DEFAULTS.items():
+        if not getattr(record, "request_id", None):
+            record.request_id = request_id_var.get()
+        record.environment = getattr(record, "environment", None) or settings.ENVIRONMENT
+        for field in ("method", "path", "status_code", "duration_ms"):
             if not hasattr(record, field):
-                setattr(record, field, default())
+                setattr(record, field, None)
         return True
 
 
@@ -34,25 +28,20 @@ def configure_logging() -> None:
     root.setLevel(settings.LOG_LEVEL.upper())
 
     handler = logging.StreamHandler(sys.stdout)
-    handler.addFilter(AppContextFilter())
+    handler.addFilter(RequestContextFilter())
 
     if settings.LOG_JSON:
         formatter = JsonFormatter(
             fmt=(
                 "%(asctime)s %(levelname)s %(name)s %(message)s "
-                "%(environment)s %(request_id)s %(correlation_id)s "
-                "%(method)s %(path)s %(status_code)s %(duration_ms)s"
+                "%(environment)s %(request_id)s %(method)s %(path)s "
+                "%(status_code)s %(duration_ms)s"
             ),
-            rename_fields={
-                "asctime": "timestamp",
-                "levelname": "level",
-                "name": "logger",
-            },
+            rename_fields={"asctime": "timestamp", "levelname": "level", "name": "logger"},
         )
     else:
         formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(message)s "
-            "[rid=%(request_id)s cid=%(correlation_id)s]"
+            "%(asctime)s - %(levelname)s - %(message)s [rid=%(request_id)s]"
         )
 
     handler.setFormatter(formatter)

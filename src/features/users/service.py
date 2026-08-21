@@ -7,26 +7,24 @@ from src.db.models import User
 from src.features.auth import utils as auth_utils, service as auth_service
 from src.features.users import repository
 from src.features.users.schemas import UserResponseSchema, UserUpdatedDataRequestSchema
+from src.core.logger import logger
 
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
     user = repository.get_user_by_id(db, user_id)
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
     return UserResponseSchema.model_validate(user)
 
 
-def update_user_data(
-    user_id: int,
-    current_user: User,
-    db: Session,
-    data: UserUpdatedDataRequestSchema,
+def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema,
 ) -> UserResponseSchema:
+
     user = repository.get_user_by_id(db, user_id)
     is_self_user = current_user.id == user_id
 
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+    if not user or not user.is_active:
+        raise HTTPException(status_code=404, detail=f"Cannot update user! User by id {user_id} not found")
     if data.role and is_self_user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -52,6 +50,7 @@ def update_user_data(
                 detail="Client's entered old password does not match, cannot change password.",
             )
         user.password = auth_utils.hash_password(data.new_password)
+        logger.info("User %s password updated", user_id)
 
     if data.image_updated:
         user.image_reference = auth_utils.generate_image_reference()
@@ -61,14 +60,9 @@ def update_user_data(
     return UserResponseSchema.model_validate(user)
 
 
-def remove_account(
-    user_id: int,
-    current_user: User,
-    db: Session,
-    response: Response,
-) -> bool:
+def remove_account(user_id: int, current_user: User, db: Session, response: Response,) -> bool:
     user = repository.get_user_by_id(db, user_id)
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
 
     repository.deactivate_account(user, db)
@@ -76,5 +70,7 @@ def remove_account(
 
     if current_user.id == user_id:
         clear_auth_cookies(response)
+    
+    logger.info("User %s account removed successfully!", user_id)
 
     return True
