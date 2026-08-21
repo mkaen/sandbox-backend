@@ -11,6 +11,7 @@ from src.features.auth.dependencies import get_current_user
 from src.features.users import service
 from src.features.users.dependencies import require_self_or_admin
 from src.features.users.schemas import UserResponseSchema, UserUpdatedDataRequestSchema
+
 router_v1 = APIRouter(prefix="/v1/users", tags=["users"])
 
 
@@ -48,6 +49,20 @@ async def update_user_data(
         raise RequestValidationError(e.errors())
 
     return service.update_user_data(user_id, current_user, db, data)
+
+
+@router_v1.post("/upload-profile-image/{user_id}", status_code=200, summary="Receiving profile image", responses={400: {"description": "Unsupported content type"}},)
+async def upload_profile_image(
+    user_id: int,
+    request: Request,
+    _: Annotated[User, Depends(require_self_or_admin)],
+    db: Annotated[Session, Depends(get_db)],
+):
+
+    image = await request.body()
+
+    return service.profile_image_upload_handler(user_id, request, db, image)
+
 
 
 @router_v1.delete("/remove/{user_id}", status_code=200, summary="Deactivate account")

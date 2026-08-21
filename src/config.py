@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
     CORS_ORIGINS: list[str] = ["http://localhost:8080"]
+    R2_WORKER_URL: str
+    R2_UPLOAD_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     JWT_SIGNING_ALGORITHM: str = "HS256"
