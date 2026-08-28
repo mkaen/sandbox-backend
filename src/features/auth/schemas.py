@@ -1,7 +1,4 @@
-from uuid import UUID
 
-from src.constants import UserRoles
-from src.features.auth.utils import generate_image_reference
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 class LoginRequestSchema(BaseModel):
@@ -35,11 +32,6 @@ class RegisterRequestSchema(BaseModel):
     phone: str 
     email: EmailStr
     password: str
-    has_image: UUID | None = Field(
-        alias="hasImage",
-        default=None,
-        description="If user has an image, generate reference (uuid) and return it to frontend",
-    )
     
     
     @field_validator("first_name")
@@ -99,10 +91,3 @@ class RegisterRequestSchema(BaseModel):
         if len(value) > 40:
             raise ValueError("Email must be less than 40 characters long")
         return value
-
-    @field_validator("has_image", mode="before")
-    @classmethod
-    def set_has_image_value(cls, value: bool | UUID | None):
-        if value:
-            return generate_image_reference()
-        return None

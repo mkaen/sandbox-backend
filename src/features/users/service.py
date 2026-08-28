@@ -62,20 +62,37 @@ def update_user_data(user_id: int, current_user: User, db: Session, data: UserUp
     return UserResponseSchema.model_validate(user)
 
 
-def profile_image_upload_handler(user_id: int, request: Request, db: Session, image: bytes):
+def get_profile_image_by_id(user_id: int, db: Session) -> tuple[bytes, str]:
+    """Load profile image bytes from worker after resolving the user's image reference."""
+
+    user = repository.get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+    if not user.image_reference:
+        raise HTTPException(status_code=404, detail="Profile image not found")
+
+    return r2_service.fetch_profile_image(user.image_reference)
+
+
+def profile_image_upload_handler(user_id: int, request: Request, db: Session, image: bytes) -> None:
     """Validate request content, upload new profile image, remove old one and set new profile image reference into database."""
 
     content_type = request.headers.get("content-type")
-    user = get_user_by_id(db, user_id)
+    user = repository.get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
 
-    image_reference, success = r2_service.upload_image(ImageTypes.PROFILE.value, generate_uuid(), image, content_type)
+    old_image_reference = user.image_reference
+    image_reference_uuid = generate_uuid()
 
-    if image_reference:
-        user.image_reference = image_reference
-        db.commit()
+    r2_service.upload_image(ImageTypes.PROFILE.value, image_reference_uuid, image, content_type)
 
-    if user.image_reference and success:
-        remove_image(ImageTypes.PROFILE.value, user.image_reference)
+    user.image_reference = image_reference_uuid
+    db.commit()
+    logger.info("User %s profile image reference saved", user_id)
+
+    if old_image_reference:
+        remove_image(ImageTypes.PROFILE.value, old_image_reference)
 
 
 def remove_account(user_id: int, current_user: User, db: Session, response: Response) -> bool:

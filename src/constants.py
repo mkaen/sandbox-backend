@@ -6,4 +6,4 @@ class UserRoles(Enum):
 
 
 class ImageTypes(Enum):
-    PROFILE = "profile"
+    PROFILE = "profile_images"

@@ -26,10 +26,32 @@ def get_object_url(key):
     return f"{worker_url.rstrip('/')}/{key}"
 
 
-def get_profile_image_url(image_reference):
+def fetch_image(folder: str, image_reference) -> tuple[bytes, str]:
+    """Fetch image bytes from worker using upload key."""
+
+    _validate_worker_url_and_key()
     if not image_reference:
-        return
-    return get_object_url(build_object_key(ImageTypes.PROFILE.value, image_reference))
+        raise ValueError("imageReference is required")
+
+    key = build_object_key(folder, image_reference)
+    url = f"{worker_url.rstrip('/')}/{key}"
+
+    response = requests.get(url, headers={"X-Upload-Key": upload_key}, timeout=30)
+
+    if response.status_code == 404:
+        raise HTTPException(status_code=404, detail="Image not found")
+    if not response.ok:
+        raise HTTPException(
+            status_code=502,
+            detail=f"R2 fetch failed ({response.status_code}): {response.text}",
+        )
+
+    content_type = response.headers.get("Content-Type", "application/octet-stream")
+    return response.content, content_type
+
+
+def fetch_profile_image(image_reference) -> tuple[bytes, str]:
+    return fetch_image(ImageTypes.PROFILE.value, image_reference)
 
 
 def upload_image(folder, image_reference, file: bytes, content_type: str | None = None, filename: str | None = None):
@@ -52,10 +74,10 @@ def upload_image(folder, image_reference, file: bytes, content_type: str | None 
             detail=f"R2 upload failed ({response.status_code}): {response.text}",
         )
 
-    return key, True
+    return image_reference, True
 
 
-def remove_image(folder: ImageTypes, image_reference: str):
+def remove_image(folder: str, image_reference):
     """Remove image using worker."""
 
     _validate_worker_url_and_key()

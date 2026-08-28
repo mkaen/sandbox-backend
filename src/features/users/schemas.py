@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
-from uuid import UUID
 
 from src.constants import UserRoles
 
@@ -16,7 +15,6 @@ class UserResponseSchema(BaseModel):
     last_name: str = Field(alias="lastName")
     phone: str
     email: EmailStr
-    image_reference: UUID | None = Field(alias="imageReference", default=None)
     role: UserRoles
 
 
@@ -26,7 +24,6 @@ class UserUpdatedDataRequestSchema(BaseModel):
     last_name: str = Field(alias="lastName")
     phone: str 
     email: EmailStr
-    image_updated: bool = Field(alias="imageUpdated")
     old_password: str | None = Field(alias="oldPassword", default=None)
     new_password: str | None = Field(alias="newPassword", default=None)
     role: UserRoles | None = None
