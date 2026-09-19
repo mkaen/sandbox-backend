@@ -25,15 +25,7 @@ from src.features.users.schemas import UserResponseSchema
 
 
 def _user_response(user: User) -> UserResponseSchema:
-    return UserResponseSchema(
-        id=user.id,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        phone=user.phone,
-        email=user.email,
-        image_reference=user.image_reference,
-        role=user.role,
-    )
+    return UserResponseSchema.model_validate(user)
 
 
 def _issue_auth_tokens(response: Response, db: Session, user_id: int) -> None:

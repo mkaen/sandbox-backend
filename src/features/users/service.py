@@ -1,13 +1,16 @@
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from src.constants import UserRoles
+from src.features.r2.service import remove_image
+from src.core.logger import logger
+from src.constants import ImageTypes, UserRoles
+from src.features.utils import generate_uuid
 from src.core.security import clear_auth_cookies
 from src.db.models import User
 from src.features.auth import utils as auth_utils, service as auth_service
 from src.features.users import repository
 from src.features.users.schemas import UserResponseSchema, UserUpdatedDataRequestSchema
-from src.core.logger import logger
+from src.features.r2 import service as r2_service
 
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
@@ -17,8 +20,7 @@ def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
     return UserResponseSchema.model_validate(user)
 
 
-def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema,
-) -> UserResponseSchema:
+def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema) -> UserResponseSchema:
 
     user = repository.get_user_by_id(db, user_id)
     is_self_user = current_user.id == user_id
@@ -52,15 +54,48 @@ def update_user_data(user_id: int, current_user: User, db: Session, data: UserUp
         user.password = auth_utils.hash_password(data.new_password)
         logger.info("User %s password updated", user_id)
 
-    if data.image_updated:
-        user.image_reference = auth_utils.generate_image_reference()
+    # if data.image_updated:
+    #     user.image_reference = auth_utils.generate_image_reference()
 
     db.commit()
 
     return UserResponseSchema.model_validate(user)
 
 
-def remove_account(user_id: int, current_user: User, db: Session, response: Response,) -> bool:
+def get_profile_image_by_id(user_id: int, db: Session) -> tuple[bytes, str]:
+    """Load profile image bytes from worker after resolving the user's image reference."""
+
+    user = repository.get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+    if not user.image_reference:
+        raise HTTPException(status_code=404, detail="Profile image not found")
+
+    return r2_service.fetch_profile_image(user.image_reference)
+
+
+def profile_image_upload_handler(user_id: int, request: Request, db: Session, image: bytes) -> None:
+    """Validate request content, upload new profile image, remove old one and set new profile image reference into database."""
+
+    content_type = request.headers.get("content-type")
+    user = repository.get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+
+    old_image_reference = user.image_reference
+    image_reference_uuid = generate_uuid()
+
+    r2_service.upload_image(ImageTypes.PROFILE.value, image_reference_uuid, image, content_type)
+
+    user.image_reference = image_reference_uuid
+    db.commit()
+    logger.info("User %s profile image reference saved", user_id)
+
+    if old_image_reference:
+        remove_image(ImageTypes.PROFILE.value, old_image_reference)
+
+
+def remove_account(user_id: int, current_user: User, db: Session, response: Response) -> bool:
     user = repository.get_user_by_id(db, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")

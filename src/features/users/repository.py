@@ -23,7 +23,7 @@ def create_user(db: Session, user: RegisterRequestSchema) -> User:
         phone=user.phone,
         email=user.email,
         password=hash_password(user.password),
-        image_reference=user.has_image,
+        image_reference=None,
     )
     db.add(user)
     db.commit()
