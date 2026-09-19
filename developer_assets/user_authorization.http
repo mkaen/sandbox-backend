@@ -10,8 +10,7 @@ Content-Type: application/json
   "lastName": "Doe",
   "phone": "+3725551234",
   "email": "jane.doe@example.com",
-  "password": "secret123",
-  "hasImage": false
+  "password": "secret123"
 }
 
 ### Login user
