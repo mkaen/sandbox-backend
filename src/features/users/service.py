@@ -52,10 +52,7 @@ def update_user_data(user_id: int, current_user: User, db: Session, data: UserUp
                 detail="Client's entered old password does not match, cannot change password.",
             )
         user.password = auth_utils.hash_password(data.new_password)
-        logger.info("User %s password updated", user_id)
-
-    # if data.image_updated:
-    #     user.image_reference = auth_utils.generate_image_reference()
+        logger.info("User %s password is updated", user_id)
 
     db.commit()
 

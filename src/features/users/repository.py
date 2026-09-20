@@ -5,7 +5,7 @@ from src.db.models import User
 from sqlalchemy.orm import Session
 from pydantic import EmailStr
 from src.features.auth.schemas import RegisterRequestSchema
-from src.features.users.utils import create_deacticated_email
+from src.features.users.utils import create_deactivated_email
 
 
 def create_user(db: Session, user: RegisterRequestSchema) -> User:
@@ -65,5 +65,5 @@ def set_user_role(db: Session, user_id: int, role: UserRoles):
 
 def deactivate_account(user: User, db: Session) -> None:
     user.is_active = False
-    user.email = create_deacticated_email(user.id, user.email)
+    user.email = create_deactivated_email(user.id, user.email)
     db.commit()
