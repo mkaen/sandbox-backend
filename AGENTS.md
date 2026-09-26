@@ -42,7 +42,8 @@ Register new routers in `src/api/router.py`. Keep models in `src/db/models.py`.
 ## API and errors
 
 - Versioned prefixes: `/v1/<resource>`.
-- Auth is HttpOnly cookies (`access_token` / `refresh_token`), not `Authorization` headers unless the code already does that.
+- Auth is primarily HttpOnly cookies (`access_token` / `refresh_token`). `get_current_user` also accepts an optional `Authorization: Bearer` token for the same access JWT (existing clients may use either).
+- Login error messages intentionally differ for unknown email vs wrong password (user enumeration tradeoff); do not unify without an explicit product decision.
 - Domain failures: `HTTPException`. Invalid bodies: Pydantic / `RequestValidationError`. Unhandled errors stay 500 via `src/core/exception_handlers.py` — do not leak internals.
 - Log through `src.core.logger.logger`. Do not print.
 

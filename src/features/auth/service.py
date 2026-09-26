@@ -21,7 +21,7 @@ from src.features.auth.repository import (
 )
 from src.features.auth.schemas import LoginRequestSchema, RegisterRequestSchema
 from src.features.users.repository import create_user, get_user_by_email, get_user_by_id
-from src.features.users.schemas import UserResponseSchema
+from src.features.users.schemas import CreateUserData, UserResponseSchema
 
 
 def _user_response(user: User) -> UserResponseSchema:
@@ -42,10 +42,14 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
     if get_user_by_email(db, registration_data.email):
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
-    new_user = create_user(db, registration_data)
-
-    if not new_user:
-        raise HTTPException(status_code=500, detail="Failed to create user")
+    create_data = CreateUserData(
+        first_name=registration_data.first_name,
+        last_name=registration_data.last_name,
+        phone=registration_data.phone,
+        email=registration_data.email,
+        password=registration_data.password,
+    )
+    new_user = create_user(db, create_data)
 
     _issue_auth_tokens(response, db, new_user.id)
     return _user_response(new_user)

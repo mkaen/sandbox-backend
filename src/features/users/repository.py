@@ -1,69 +1,50 @@
-from src.constants import UserRoles
-from fastapi import HTTPException
-from src.features.auth.utils import hash_password
-from src.db.models import User
 from sqlalchemy.orm import Session
 from pydantic import EmailStr
-from src.features.auth.schemas import RegisterRequestSchema
+
+from src.features.users.schemas import CreateUserData
 from src.features.users.utils import create_deactivated_email
+from src.features.auth.utils import hash_password
+from src.db.models import User
 
 
-def create_user(db: Session, user: RegisterRequestSchema) -> User:
-    """
-    Create new user and save it to the database. If user is created successfully, return the user object.
-    Args:
-        db: Session
-        user: RegisterRequestSchema
-    Returns:
-        User: User object
-    """
+def create_user(db: Session, data: CreateUserData) -> User:
     user = User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        phone=user.phone,
-        email=user.email,
-        password=hash_password(user.password),
+        first_name=data.first_name,
+        last_name=data.last_name,
+        phone=data.phone,
+        email=data.email,
+        password=hash_password(data.password),
         image_reference=None,
     )
     db.add(user)
     db.commit()
+    db.refresh(user)
     return user
 
 
-def get_user_by_email(db: Session, email: EmailStr) -> User:
-    """
-    Get a user by email. 
-    Args:
-        db: Session
-        email: EmailStr
-    Returns:
-        User: User object or None
-    """
+def get_user_by_email(db: Session, email: EmailStr) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> User:
-    """
-    Get a user by id.
-    Args:
-        db: Session
-        user_id: int
-    Returns:
-        User: User object or None
-    """
+def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id).first()
 
 
-def set_user_role(db: Session, user_id: int, role: UserRoles):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail=f"Cannot fetch user by id {user_id}.")
-    if role and user.role != role:
-        user.role = role
-        return role
+def get_active_user_by_id(db: Session, user_id: int) -> User | None:
+    return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
 
 
-def deactivate_account(user: User, db: Session) -> None:
+def save_user(db: Session, user: User) -> User:
+    db.commit()
+    return user
+
+
+def set_user_image_reference(db: Session, user: User, image_reference: str) -> None:
+    user.image_reference = image_reference
+    db.commit()
+
+
+def deactivate_account(db: Session, user: User) -> None:
     user.is_active = False
     user.email = create_deactivated_email(user.id, user.email)
     db.commit()

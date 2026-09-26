@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 
-
 IMAGE_JPEG = "image/jpeg"
 
 ALLOWED_IMAGE_TYPES = {IMAGE_JPEG, "image/png", "image/webp", "image/gif"}
@@ -92,6 +91,9 @@ def validate_image(content_type: str | None, data: bytes, filename: str | None =
         raise HTTPException(status_code=400, detail=HEIC_ERROR)
 
     if not matches_declared_type(header, mime_type):
-        raise HTTPException(status_code=400, detail="File content does not match a supported image type (JPEG, PNG, WebP, or GIF)")
+        raise HTTPException(
+            status_code=400,
+            detail="File content does not match a supported image type (JPEG, PNG, WebP, or GIF)",
+        )
 
     return mime_type

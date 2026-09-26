@@ -5,5 +5,8 @@ class UserRoles(Enum):
     USER = "USER"
 
 
-class ImageTypes(Enum):
+class ImageTypesFolderName(Enum):
     PROFILE = "profile_images"
+
+MIN_PASSWORD_LENGTH = 6
+MAX_PASSWORD_LENGTH = 30

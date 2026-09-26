@@ -292,6 +292,8 @@ Auth uses **HttpOnly cookies** for access and refresh tokens. `COOKIE_SECURE` mu
 | `DB_ECHO` | no | `true` | Log SQL statements |
 | `LOG_LEVEL` | no | `INFO` | Logging level |
 | `LOG_JSON` | no | `true` | Emit structured JSON logs |
+| `R2_WORKER_URL` | yes | — | Base URL of the Cloudflare Worker that fronts R2 object storage |
+| `R2_UPLOAD_KEY` | yes | — | Shared secret sent as `X-Upload-Key` to the R2 worker |
 
 Templates: `.env.example` (local), `.env.prod.example` (production)
 
@@ -314,15 +316,16 @@ sandbox-backend/
 │   │   └── router.py           # Aggregates feature routers
 │   ├── core/
 │   │   ├── middleware.py       # CORS and other middleware
-│   │   ├── security.py         # JWT, cookies, password hashing
+│   │   ├── security.py         # JWT and auth cookies
 │   │   └── logger.py           # Structured logging setup
 │   ├── db/
 │   │   ├── database.py         # SQLAlchemy engine and session
 │   │   └── models.py           # SQLAlchemy models
 │   └── features/
-│       ├── auth/               # Login, register, refresh, logout
-│       │   └── dependencies.py # get_current_user
-│       └── users/              # User routes
+│       ├── auth/               # Login, register, refresh, logout (password hashing in auth/utils.py)
+│       │   └── dependencies.py # get_current_user (cookies or Bearer)
+│       ├── r2/                 # Profile image upload/fetch via R2 worker (validation.py)
+│       └── users/              # User routes, shared field validators (schema_fields.py)
 ├── tests/
 ├── .env                        # Local development (not committed)
 ├── .env.prod                   # Live production (not committed)
