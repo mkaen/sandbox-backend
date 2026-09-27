@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from pydantic import EmailStr
 
+from src.core.logger import logger
 from src.features.users.schemas import CreateUserData
 from src.features.users.utils import create_deactivated_email
 from src.features.auth.utils import hash_password
@@ -19,6 +20,7 @@ def create_user(db: Session, data: CreateUserData) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.info(f"Created new user: {user}, id={user.id}.")
     return user
 
 
@@ -38,21 +40,25 @@ def set_user_archive_value(db: Session, user: User, value: bool) -> User:
     user.is_archived = value
     db.commit()
     db.refresh(user)
+    logger.info(f"User {user.id} archive set to {value}.")
     return user
 
 
 def save_user(db: Session, user: User) -> User:
     db.commit()
+    logger.info(f"User {user} data updated successfully.")
     return user
 
 
 def set_user_image_reference(db: Session, user: User, image_reference: str) -> None:
     user.image_reference = image_reference
     db.commit()
+    logger.info(f"New image reference is set for {user}")
 
 
 def deactivate_account(db: Session, user: User) -> None:
     user.is_active = False
     user.is_archived = True
     user.email = create_deactivated_email(user.id, user.email)
+    logger.info(f"User {user.id} account is removed.")
     db.commit()

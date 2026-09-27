@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
+from src.core.logger import logger
 from src.features.auth.utils import verify_password
 from src.config import settings
 from src.core.security import (
@@ -40,7 +41,8 @@ def _issue_auth_tokens(response: Response, db: Session, user_id: int) -> None:
 
 def register_user(registration_data: RegisterRequestSchema, response: Response, db: Session):
     if get_user_by_email(db, registration_data.email):
-        raise HTTPException(status_code=400, detail="User with this email already exists")
+        logger.info(f"User with email {registration_data.email} already exists. Registration failed.")
+        raise HTTPException(status_code=400, detail="Failed to create new user.")
 
     create_data = CreateUserData(
         first_name=registration_data.first_name,
@@ -56,11 +58,14 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
 
 
 def authenticate_user(data: LoginRequestSchema, response: Response, db: Session):
+    logger.info("Authenticate user")
     user = get_user_by_email(db, data.email)
     if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User with this email does not exist")
+        logger.info(f"User with email {data.email} do not exist. Failed to log in.")
+        raise HTTPException(status_code=401, detail="Failed to log in")
     if not verify_password(data.password, user.password):
-        raise HTTPException(status_code=401, detail="Password is incorrect")
+        logger.info(f"User email {data.email} and password do not match. Login has failed.")
+        raise HTTPException(status_code=401, detail="Failed to log in")
 
     _issue_auth_tokens(response, db, user.id)
     return _user_response(user)
@@ -96,6 +101,7 @@ def logout_user(request: Request, response: Response, db: Session):
         revoke_refresh_token(db, token)
 
     clear_auth_cookies(response)
+    logger.info("User is logged out.")
 
 
 def revoke_all_user_sessions(db: Session, user_id: int) -> None:

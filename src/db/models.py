@@ -30,3 +30,6 @@ class User(Base):
     role = Column(Enum(UserRoles, name='userroles'), default=UserRoles.USER, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return self.first_name + " " + self.last_name
