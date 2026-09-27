@@ -49,7 +49,6 @@ class UserUpdatedDataRequestSchema(BaseModel):
     id: int
     first_name: str = Field(alias="firstName")
     last_name: str = Field(alias="lastName")
-    is_archived: bool = Field(alias="isArchived")
     phone: str
     email: EmailStr
     old_password: str | None = Field(alias="oldPassword", default=None)
