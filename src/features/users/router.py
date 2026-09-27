@@ -31,7 +31,7 @@ async def get_user_by_id(user_id: int, _: Annotated[User, Depends(require_self_o
     return service.get_user_by_id(db, user_id)
 
 
-@router_v1.put("/update/{user_id}", status_code=200, summary="Update user data")
+@router_v1.put("/{user_id}/update", status_code=200, summary="Update user data")
 async def update_user_data(
     user_id: int,
     data: UserUpdatedDataRequestSchema,
@@ -42,7 +42,7 @@ async def update_user_data(
 
 
 @router_v1.get(
-    "/image/{user_id}",
+    "/{user_id}/image",
     status_code=200,
     summary="Get profile image by id",
     responses={404: {"description": "User or profile image not found"}},
@@ -59,7 +59,7 @@ async def get_profile_image_by_id(
 
 
 @router_v1.post(
-    "/upload-profile-image/{user_id}",
+    "/{user_id}/upload-profile-image",
     status_code=204,
     summary="Upload profile image",
     responses={400: {"description": "Unsupported content type"}},
@@ -90,7 +90,7 @@ async def user_archive_handler(
     return service.update_user_archive_value(db, user_id, body.data)
 
 
-@router_v1.delete("/remove/{user_id}", status_code=200, summary="Deactivate account")
+@router_v1.delete("/{user_id}/remove", status_code=200, summary="Deactivate account")
 async def remove_account(
     user_id: int,
     current_user: Annotated[User, Depends(require_self_or_admin)],
