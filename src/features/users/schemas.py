@@ -28,6 +28,21 @@ class UserResponseSchema(BaseModel):
     is_archived: bool = Field(alias="isArchived")
 
 
+class UserSetArchiveRequestSchema(BaseModel):
+    data: bool
+
+
+class UserSetIsArchivedResponseSchema(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        serialize_by_alias=True,
+    )
+
+    id: int
+    is_archived: bool = Field(alias="isArchived")
+
+
 class UserUpdatedDataRequestSchema(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

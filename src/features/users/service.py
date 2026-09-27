@@ -9,7 +9,7 @@ from src.core.security import clear_auth_cookies
 from src.db.models import User
 from src.features.auth import utils as auth_utils, service as auth_service
 from src.features.users import repository
-from src.features.users.schemas import UserResponseSchema, UserUpdatedDataRequestSchema
+from src.features.users.schemas import UserResponseSchema, UserSetIsArchivedResponseSchema, UserUpdatedDataRequestSchema
 from src.features.r2 import service as r2_service
 from src.features.users.utils import handle_role_change_permission
 
@@ -23,6 +23,13 @@ def _get_active_user(db: Session, user_id: int) -> User:
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
     return UserResponseSchema.model_validate(_get_active_user(db, user_id))
+
+
+def update_user_archive_value(db: Session, user_id: int, value: bool) -> UserSetIsArchivedResponseSchema:
+    user = _get_active_user(db, user_id)
+    updated_user = repository.set_user_archive_value(db, user, value)
+    return UserSetIsArchivedResponseSchema.model_validate(updated_user)
+
 
 
 def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema) -> UserResponseSchema:

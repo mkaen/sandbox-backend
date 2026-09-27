@@ -9,8 +9,13 @@ from src.db.database import get_db
 from src.db.models import User
 from src.features.auth.dependencies import get_current_user
 from src.features.users import service
-from src.features.users.dependencies import require_self_or_admin
-from src.features.users.schemas import UserResponseSchema, UserUpdatedDataRequestSchema
+from src.features.users.dependencies import require_admin_not_self, require_self_or_admin
+from src.features.users.schemas import (
+    UserResponseSchema,
+    UserSetArchiveRequestSchema,
+    UserSetIsArchivedResponseSchema,
+    UserUpdatedDataRequestSchema,
+)
 
 router_v1 = APIRouter(prefix="/v1/users", tags=["users"])
 
@@ -65,6 +70,20 @@ async def upload_profile_image(
 ) -> None:
     image = await request.body()
     await run_in_threadpool(service.profile_image_upload_handler, user_id, request, db, image)
+
+
+@router_v1.put(
+    "/{user_id}/archive",
+    status_code=200,
+    summary="Set user archive status",
+)
+async def user_archive_handler(
+    user_id: int,
+    body: UserSetArchiveRequestSchema,
+    _: Annotated[User, Depends(require_admin_not_self)],
+    db: Annotated[Session, Depends(get_db)],
+) -> UserSetIsArchivedResponseSchema:
+    return service.update_user_archive_value(db, user_id, body.data)
 
 
 @router_v1.delete("/remove/{user_id}", status_code=200, summary="Deactivate account")
