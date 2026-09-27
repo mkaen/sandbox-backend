@@ -17,12 +17,15 @@ from src.features.users.utils import handle_role_change_permission
 def _get_active_user(db: Session, user_id: int) -> User:
     user = repository.get_active_user_by_id(db, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+        raise HTTPException(status_code=404, detail=f"Active user by id {user_id} not found")
     return user
 
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
-    return UserResponseSchema.model_validate(_get_active_user(db, user_id))
+    user = repository.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
+    return UserResponseSchema.model_validate(user)
 
 
 def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema) -> UserResponseSchema:
