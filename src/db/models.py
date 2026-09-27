@@ -25,6 +25,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     image_reference = Column(Uuid, nullable=True)
+    is_archived = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
     role = Column(Enum(UserRoles, name='userroles'), default=UserRoles.USER, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
