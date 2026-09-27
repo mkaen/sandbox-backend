@@ -22,10 +22,7 @@ def _get_active_user(db: Session, user_id: int) -> User:
 
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
-    user = repository.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User by id {user_id} not found")
-    return UserResponseSchema.model_validate(user)
+    return UserResponseSchema.model_validate(_get_active_user(db, user_id))
 
 
 def update_user_data(user_id: int, current_user: User, db: Session, data: UserUpdatedDataRequestSchema) -> UserResponseSchema:
