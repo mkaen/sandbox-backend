@@ -1,6 +1,15 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from src.constants import UserRoles
+from src.features.users import schema_fields
+
+
+class CreateUserData(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr
+    password: str
 
 
 class UserResponseSchema(BaseModel):
@@ -16,74 +25,62 @@ class UserResponseSchema(BaseModel):
     phone: str
     email: EmailStr
     role: UserRoles
+    is_archived: bool = Field(alias="isArchived")
+
+
+class UserSetArchiveRequestSchema(BaseModel):
+    data: bool
+
+
+class UserSetIsArchivedResponseSchema(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        serialize_by_alias=True,
+    )
+
+    id: int
+    is_archived: bool = Field(alias="isArchived")
 
 
 class UserUpdatedDataRequestSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     id: int
     first_name: str = Field(alias="firstName")
     last_name: str = Field(alias="lastName")
-    phone: str 
+    phone: str
     email: EmailStr
     old_password: str | None = Field(alias="oldPassword", default=None)
     new_password: str | None = Field(alias="newPassword", default=None)
     role: UserRoles | None = None
-    
-    
-    @field_validator("first_name")
-    def validate_first_name(cls, value):
-        value = value.strip().title()
-        if not value:
-            raise ValueError("First name cannot be empty")
-        if len(value) < 2:
-            raise ValueError("First name must be at least 2 characters long")
-        if len(value) > 25:
-            raise ValueError("First name must be less than 25 characters long")
-        return value
 
+    @field_validator("first_name")
+    @classmethod
+    def validate_first_name(cls, value):
+        return schema_fields.validate_person_name(value, "First name")
 
     @field_validator("last_name")
+    @classmethod
     def validate_last_name(cls, value):
-        value = value.strip().title()
-        if not value:
-            raise ValueError("Last name cannot be empty")
-        if len(value) < 2:
-            raise ValueError("Last name must be at least 2 characters long")
-        if len(value) > 25:
-            raise ValueError("Last name must be less than 25 characters long")
-        return value
-
+        return schema_fields.validate_person_name(value, "Last name")
 
     @field_validator("phone")
+    @classmethod
     def validate_phone(cls, value):
-        value = value.strip()
-        if not value:
-            raise ValueError("Phone cannot be empty")
-        if not value.isdigit():
-            raise ValueError("Phone must contain only digits")
-        if len(value) < 7:
-            raise ValueError("Phone must be at least 7 characters long")
-        if len(value) > 15:
-            raise ValueError("Phone must be less than 15 characters long")
-        return value
-
+        return schema_fields.validate_phone(value)
 
     @field_validator("old_password")
+    @classmethod
     def validate_old_password(cls, value):
         if not value:
             return value
         return value.strip()
 
-
     @field_validator("new_password")
+    @classmethod
     def validate_new_password(cls, value):
-        if not value:
-            return value
-        value = value.strip()
-        if len(value) < 8:
-            raise ValueError("Password must be at least 8 characters long")
-        if len(value) > 30:
-            raise ValueError("Password must be less than 30 characters long")
-        return value
+        return schema_fields.validate_optional_new_password(value)
 
     @model_validator(mode="after")
     def validate_password_pair(self):
@@ -92,12 +89,6 @@ class UserUpdatedDataRequestSchema(BaseModel):
         return self
 
     @field_validator("email")
+    @classmethod
     def validate_email(cls, value):
-        value = value.strip().lower()
-        if not value:
-            raise ValueError("Email cannot be empty")
-        if len(value) < 5:
-            raise ValueError("Email must be at least 5 characters long")
-        if len(value) > 40:
-            raise ValueError("Email must be less than 40 characters long")
-        return value
+        return schema_fields.validate_user_email(value)
