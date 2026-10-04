@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
+from src.core.exceptions import WithNotificationCodeHTTPException as HTTPNotificationExc
 from src.core.logger import logger
 from src.features.auth.utils import verify_password
 from src.config import settings
@@ -60,12 +61,14 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
 def authenticate_user(data: LoginRequestSchema, response: Response, db: Session):
     logger.info("Authenticate user")
     user = get_user_by_email(db, data.email)
+
     if not user or not user.is_active:
         logger.info(f"User with email {data.email} do not exist. Failed to log in.")
-        raise HTTPException(status_code=401, detail="Failed to log in")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_DATA")
+
     if not verify_password(data.password, user.password):
         logger.info(f"User email {data.email} and password do not match. Login has failed.")
-        raise HTTPException(status_code=401, detail="Failed to log in")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_DATA")
 
     _issue_auth_tokens(response, db, user.id)
     return _user_response(user)

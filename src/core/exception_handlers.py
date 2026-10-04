@@ -7,14 +7,19 @@ from src.core.logger import logger
 
 def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    content: dict[str, object] = {"detail": exc.detail}
+    notification_code = getattr(exc, "notification_code", None)
+    if notification_code is not None:
+        content["notificationCode"] = notification_code
     extra = {"status_code": exc.status_code, "method": request.method, "path": request.url.path}
+    
     if exc.status_code >= 500:
         logger.error(detail, extra=extra)
     else:
         logger.info(detail, extra=extra)
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail},
+        content=content,
         headers=getattr(exc, "headers", None),
     )
 
