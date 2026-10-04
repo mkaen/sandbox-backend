@@ -64,11 +64,11 @@ def authenticate_user(data: LoginRequestSchema, response: Response, db: Session)
 
     if not user or not user.is_active:
         logger.info(f"User with email {data.email} do not exist. Failed to log in.")
-        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_DATA")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="ERRORS.LOGIN_FAILED")
 
     if not verify_password(data.password, user.password):
         logger.info(f"User email {data.email} and password do not match. Login has failed.")
-        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_DATA")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="ERRORS.LOGIN_FAILED")
 
     _issue_auth_tokens(response, db, user.id)
     return _user_response(user)
