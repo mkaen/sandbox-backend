@@ -1,0 +1,81 @@
+// Collect Docker logs from sandbox-backend app containers and ship them to Loki.
+
+discovery.docker "linux" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "sandbox_backend" {
+  targets = discovery.docker.linux.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/sandbox-backend-(dev|prod)"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+    replacement   = "$1"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/sandbox-backend-(.*)"
+    target_label  = "deployment"
+    replacement   = "$1"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_logging_service"]
+    regex         = "(.+)"
+    target_label  = "service"
+    replacement   = "$1"
+  }
+
+  rule {
+    source_labels = ["service"]
+    regex         = ""
+    action        = "replace"
+    target_label  = "service"
+    replacement   = "sandbox-backend"
+  }
+}
+
+loki.source.docker "sandbox_backend" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.sandbox_backend.output
+  forward_to = [loki.process.sandbox_backend.receiver]
+}
+
+loki.process "sandbox_backend" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.json {
+    expressions = {
+      level       = "level",
+      environment = "environment",
+      logger      = "logger",
+      method      = "method",
+      path        = "path",
+      status_code = "status_code",
+      duration_ms = "duration_ms",
+      request_id  = "request_id",
+    }
+  }
+
+  stage.labels {
+    values = {
+      level       = "",
+      environment = "",
+      logger      = "",
+    }
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

@@ -1,31 +1,34 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from src.core.exception_handlers import register_exception_handlers
 from src.core.middleware import register_middleware
 from src.api.router import api_router
+from src.config import settings
+from src.core.logger import configure_logging, logger
+
+
+configure_logging()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application is starting up...")
+    logger.info("Application is starting up...")
     yield
-    print("Application is shutting down...")
+    logger.info("Application is shutting down...")
 
 
 def create_app():
-
-    app = FastAPI(lifespan=lifespan)
-
+    is_prod = settings.ENVIRONMENT == "production"
+    app = FastAPI(
+        lifespan=lifespan,
+        docs_url=None if is_prod else "/docs",
+        redoc_url=None if is_prod else "/redoc",
+        openapi_url=None if is_prod else "/openapi.json",
+    )
+    register_exception_handlers(app)
     register_middleware(app)
-    _register_routers(app)
-    
-
+    app.include_router(api_router)
     return app
 
 
-def _register_routers(app: FastAPI):
-    app.include_router(api_router)
-
-
 app = create_app()
-
-
