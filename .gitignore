@@ -231,3 +231,6 @@ Icon
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+#VSCode
+.vscode

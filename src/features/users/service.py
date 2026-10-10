@@ -28,6 +28,8 @@ def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
 def update_user_archive_value(db: Session, user_id: int, value: bool) -> UserSetIsArchivedResponseSchema:
     user = _get_active_user(db, user_id)
     updated_user = repository.set_user_archive_value(db, user, value)
+    logger.info(f"Update user {user_id} archive value to {value}.")
+
     return UserSetIsArchivedResponseSchema.model_validate(updated_user)
 
 

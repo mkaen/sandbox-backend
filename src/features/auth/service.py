@@ -43,7 +43,7 @@ def _issue_auth_tokens(response: Response, db: Session, user_id: int) -> None:
 def register_user(registration_data: RegisterRequestSchema, response: Response, db: Session):
     if get_user_by_email(db, registration_data.email):
         logger.info(f"User with email {registration_data.email} already exists. Registration failed.")
-        raise HTTPException(status_code=400, detail="Failed to create new user.")
+        raise HTTPNotificationExc(status_code=400, detail="Failed to create new user.", notification_code='EMAIL_ALREADY_EXISTS')
 
     create_data = CreateUserData(
         first_name=registration_data.first_name,
@@ -64,13 +64,15 @@ def authenticate_user(data: LoginRequestSchema, response: Response, db: Session)
 
     if not user or not user.is_active:
         logger.info(f"User with email {data.email} do not exist. Failed to log in.")
-        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="ERRORS.LOGIN_FAILED")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_FAILED")
 
     if not verify_password(data.password, user.password):
         logger.info(f"User email {data.email} and password do not match. Login has failed.")
-        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="ERRORS.LOGIN_FAILED")
+        raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_FAILED")
 
     _issue_auth_tokens(response, db, user.id)
+    logger.info(f"User {user} login successed")
+
     return _user_response(user)
 
 
@@ -98,13 +100,14 @@ def refresh_access_token(request: Request, response: Response, db: Session):
     return _user_response(user)
 
 
-def logout_user(request: Request, response: Response, db: Session):
+def logout_user(request: Request, response: Response, db: Session, user_id: int):
+    user = get_user_by_id(user_id)
     token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
     if token:
         revoke_refresh_token(db, token)
 
     clear_auth_cookies(response)
-    logger.info("User is logged out.")
+    logger.info(f"User {user} logged out.")
 
 
 def revoke_all_user_sessions(db: Session, user_id: int) -> None:
