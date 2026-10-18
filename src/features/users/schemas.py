@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from sqlalchemy.dialects.postgresql import ext
 
 from src.constants import UserRoles
 from src.features.users import schema_fields
@@ -92,3 +93,21 @@ class UserUpdatedDataRequestSchema(BaseModel):
     @classmethod
     def validate_email(cls, value):
         return schema_fields.validate_user_email(value)
+
+
+class PaginatedFilteredUsersRequestSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra='forbid')
+
+    name_filter: str | None = Field(default=None, alias="nameFilter", max_length=30)
+    role: UserRoles | None = None
+    size: int = Field(default=10, ge=1, le=100)
+    page: int = Field(default=1, ge=1)
+
+    
+
+
+class PaginatedFilteredUsersResponseSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    total_pages: int = Field(alias="totalPages")
+    filtered_list: list = Field(alias="filteredList")

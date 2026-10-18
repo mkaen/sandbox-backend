@@ -1,7 +1,11 @@
+from fastapi import Query
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
 from pydantic import EmailStr
+from sqlalchemy.sql import text
 
 from src.core.logger import logger
+from src.constants import UserRoles
 from src.features.users.schemas import CreateUserData
 from src.features.users.utils import create_deactivated_email
 from src.features.auth.utils import hash_password
@@ -62,3 +66,22 @@ def deactivate_account(db: Session, user: User) -> None:
     user.email = create_deactivated_email(user.id, user.email)
     logger.info(f"User {user.id} account is removed.")
     db.commit()
+
+
+def _active_users_query(db: Session, name_filter: str | None, role: UserRoles | None) -> Query:
+    query = db.query(User).filter(User.is_active.is_(True))
+    if role:
+        query = query.filter(User.role == role)
+    if name_filter:
+        pattern = f"%{name_filter.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')}%"
+        query = query.filter(or_(User.first_name.ilike(pattern, escape="\\"), User.last_name.ilike(pattern, escape="\\")))
+    return query
+
+
+def count_filtered_users(db: Session, name_filter: str | None, role: UserRoles | None) -> int:
+    return _active_users_query(db, name_filter, role).count()
+
+
+def get_filtered_users(db: Session, name_filter: str | None, role: UserRoles | None, size: int, page: int) -> list[User]:
+    query = _active_users_query(db, name_filter, role)
+    return query.order_by(User.created_at.desc()).offset((page - 1) * size).limit(size).all()

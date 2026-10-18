@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response as ImageResponse
 from sqlalchemy.orm import Session
@@ -9,12 +9,14 @@ from src.db.database import get_db
 from src.db.models import User
 from src.features.auth.dependencies import get_current_user
 from src.features.users import service
-from src.features.users.dependencies import require_admin_not_self, require_self_or_admin
+from src.features.users.dependencies import require_admin_not_self, require_self_or_admin, require_admin
 from src.features.users.schemas import (
     UserResponseSchema,
     UserSetArchiveRequestSchema,
     UserSetIsArchivedResponseSchema,
     UserUpdatedDataRequestSchema,
+    PaginatedFilteredUsersRequestSchema,
+    PaginatedFilteredUsersResponseSchema,
 )
 
 router_v1 = APIRouter(prefix="/v1/users", tags=["users"])
@@ -23,6 +25,15 @@ router_v1 = APIRouter(prefix="/v1/users", tags=["users"])
 @router_v1.get("/me")
 async def me(user: Annotated[User, Depends(get_current_user)]) -> UserResponseSchema:
     return UserResponseSchema.model_validate(user)
+
+
+@router_v1.get("/", status_code=200, summary="Fetch users by using filter params")
+async def get_users(
+    params: Annotated[PaginatedFilteredUsersRequestSchema, Query()],
+    _: Annotated[User, Depends(require_admin)],
+    db: Annotated[Session, Depends(get_db)],
+) -> PaginatedFilteredUsersResponseSchema:
+    return service.fetch_filtered_users(db, params)
 
 
 @router_v1.get("/{user_id}", status_code=200, summary="Get user by id")

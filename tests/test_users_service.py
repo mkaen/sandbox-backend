@@ -3,10 +3,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from src.constants import UserRoles
-from src.features.users import service
-from src.features.users.schemas import UserUpdatedDataRequestSchema
+from src.features.users import repository, service
+from src.features.users.schemas import PaginatedFilteredUsersRequestSchema, UserUpdatedDataRequestSchema
 
 
 def _user(**overrides):
@@ -92,6 +93,32 @@ class UsersServiceTests(unittest.TestCase):
             service.update_user_data(1, current, self.db, data)
 
         self.assertEqual(ctx.exception.status_code, 403)
+
+    @patch("src.features.users.service.repository.get_filtered_users")
+    @patch("src.features.users.service.repository.count_filtered_users")
+    def test_fetch_filtered_users_keeps_one_based_page_and_computes_total_pages(self, count, get_filtered):
+        count.return_value = 25
+        get_filtered.return_value = [_user(is_archived=False)]
+        params = PaginatedFilteredUsersRequestSchema.model_validate({"nameFilter": None, "size": 10, "page": 1})
+
+        result = service.fetch_filtered_users(self.db, params)
+
+        self.assertEqual(result.page, 1)
+        self.assertEqual(result.total_pages, 3)
+        self.assertEqual(len(result.filtered_list), 1)
+
+    def test_page_must_be_at_least_one(self):
+        with self.assertRaises(ValidationError):
+            PaginatedFilteredUsersRequestSchema.model_validate({"nameFilter": None, "page": 0})
+
+    def test_get_filtered_users_offsets_by_zero_based_page_index(self):
+        query = MagicMock()
+        query.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
+
+        with patch("src.features.users.repository._active_users_query", return_value=query):
+            repository.get_filtered_users(self.db, None, None, 10, 3)
+
+        query.order_by.return_value.offset.assert_called_once_with(20)
 
 
 if __name__ == "__main__":

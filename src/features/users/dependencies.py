@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status
 from src.constants import UserRoles
 from src.db.models import User
 from src.features.auth.dependencies import get_current_user
+from src.core.exceptions import WithNotificationCodeHTTPException
 
 
 def require_self_or_admin(
@@ -29,3 +30,13 @@ def require_admin_not_self(
             detail=f"User {current_user.id} is unauthorized to access user {user_id}",
         )
     return current_user
+
+
+def require_admin(current_user: Annotated[User, Depends(get_current_user)],) -> User:
+    if current_user.role != UserRoles.ADMIN:
+        raise WithNotificationCodeHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"It's forbidden to fetch users by {current_user}",
+            notification_code='FORBIDDEN_REQUEST'
+        )
+

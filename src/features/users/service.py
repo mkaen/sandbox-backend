@@ -1,3 +1,4 @@
+import math
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -9,7 +10,7 @@ from src.core.security import clear_auth_cookies
 from src.db.models import User
 from src.features.auth import utils as auth_utils, service as auth_service
 from src.features.users import repository
-from src.features.users.schemas import UserResponseSchema, UserSetIsArchivedResponseSchema, UserUpdatedDataRequestSchema
+from src.features.users.schemas import PaginatedFilteredUsersRequestSchema, PaginatedFilteredUsersResponseSchema, UserResponseSchema, UserSetIsArchivedResponseSchema, UserUpdatedDataRequestSchema
 from src.features.r2 import service as r2_service
 from src.features.users.utils import handle_role_change_permission
 
@@ -23,6 +24,15 @@ def _get_active_user(db: Session, user_id: int) -> User:
 
 def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
     return UserResponseSchema.model_validate(_get_active_user(db, user_id))
+
+
+def fetch_filtered_users(db: Session, params: PaginatedFilteredUsersRequestSchema) -> PaginatedFilteredUsersResponseSchema:
+    total = repository.count_filtered_users(db, params.name_filter, params.role)
+    users = repository.get_filtered_users(db, params.name_filter, params.role, params.size, params.page)
+    return PaginatedFilteredUsersResponseSchema(
+        total_pages=math.ceil(total / params.size),
+        filtered_list=[UserResponseSchema.model_validate(u) for u in users],
+    )
 
 
 def update_user_archive_value(db: Session, user_id: int, value: bool) -> UserSetIsArchivedResponseSchema:
