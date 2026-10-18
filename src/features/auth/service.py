@@ -101,13 +101,12 @@ def refresh_access_token(request: Request, response: Response, db: Session):
 
 
 def logout_user(request: Request, response: Response, db: Session, user_id: int):
-    user = get_user_by_id(user_id)
     token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
     if token:
         revoke_refresh_token(db, token)
 
     clear_auth_cookies(response)
-    logger.info(f"User {user} logged out.")
+    logger.info(f"User {user_id} logged out.")
 
 
 def revoke_all_user_sessions(db: Session, user_id: int) -> None:
