@@ -31,6 +31,9 @@ def fetch_filtered_users(db: Session, params: PaginatedFilteredUsersRequestSchem
     users = repository.get_filtered_users(db, params.name_filter, params.role, params.size, params.page)
     return PaginatedFilteredUsersResponseSchema(
         total_pages=math.ceil(total / params.size),
+        page=params.page,
+        size=params.size,
+        total_users=total,
         filtered_list=[UserResponseSchema.model_validate(u) for u in users],
     )
 

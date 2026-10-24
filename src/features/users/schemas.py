@@ -110,4 +110,7 @@ class PaginatedFilteredUsersResponseSchema(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     total_pages: int = Field(alias="totalPages")
+    page: int
+    size: int
+    total_users: int = Field(alias="totalUsers")
     filtered_list: list = Field(alias="filteredList")
