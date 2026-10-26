@@ -28,7 +28,9 @@ def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
 
 def fetch_filtered_users(db: Session, params: PaginatedFilteredUsersRequestSchema) -> PaginatedFilteredUsersResponseSchema:
     total = repository.count_filtered_users(db, params.name_filter, params.role)
-    users = repository.get_filtered_users(db, params.name_filter, params.role, params.size, params.page)
+    users = repository.get_filtered_users(
+        db, params.name_filter, params.role, params.size, params.page, params.sort_by, params.sort_order
+    )
     return PaginatedFilteredUsersResponseSchema(
         total_pages=math.ceil(total / params.size),
         page=params.page,

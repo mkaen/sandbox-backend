@@ -1,15 +1,14 @@
-from fastapi import Query
-from sqlalchemy import desc, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc, or_
+from sqlalchemy.orm import Query, Session
 from pydantic import EmailStr
-from sqlalchemy.sql import text
 
 from src.core.logger import logger
-from src.constants import UserRoles
+from src.constants import SortOrder, SortType, UserRoles
 from src.features.users.schemas import CreateUserData
 from src.features.users.utils import create_deactivated_email
 from src.features.auth.utils import hash_password
 from src.db.models import User
+from src.features.users.helper import USER_SORT_HELPER
 
 
 def create_user(db: Session, data: CreateUserData) -> User:
@@ -82,6 +81,24 @@ def count_filtered_users(db: Session, name_filter: str | None, role: UserRoles |
     return _active_users_query(db, name_filter, role).count()
 
 
-def get_filtered_users(db: Session, name_filter: str | None, role: UserRoles | None, size: int, page: int) -> list[User]:
+def get_filtered_users(
+    db: Session, name_filter: str | None, role: UserRoles | None, size: int, page: int,
+    sort_by: SortType | None = None, sort_order: SortOrder | None = None,
+) -> list[User]:
+
     query = _active_users_query(db, name_filter, role)
-    return query.order_by(User.created_at.desc()).offset((page - 1) * size).limit(size).all()
+    query = _apply_sorting(query, sort_by, sort_order)
+    return query.offset((page - 1) * size).limit(size).all()
+
+
+def _apply_sorting(query: Query, sort_by: SortType | None, sort_order: SortOrder | None) -> Query:
+    """Order by ``sort_by`` (default ``created_at``). With no sort params at all, newest users come first."""
+    key = sort_by.value if sort_by else "created_at"
+    column = USER_SORT_HELPER.get(key)
+    if column is None:
+        raise ValueError(f"Trying to order by unknown column: {key}")
+    if not sort_by and not sort_order:
+        sort_order = SortOrder.DESC
+    direction = asc if sort_order == SortOrder.ASC else desc
+
+    return query.order_by(direction(column), User.id)

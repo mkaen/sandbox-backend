@@ -4,8 +4,11 @@ from unittest.mock import MagicMock, patch
 
 from fastapi import HTTPException
 from pydantic import ValidationError
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Session
 
-from src.constants import UserRoles
+from src.constants import SortOrder, SortType, UserRoles
+from src.db.models import User
 from src.features.users import repository, service
 from src.features.users.schemas import PaginatedFilteredUsersRequestSchema, UserUpdatedDataRequestSchema
 
@@ -119,6 +122,54 @@ class UsersServiceTests(unittest.TestCase):
             repository.get_filtered_users(self.db, None, None, 10, 3)
 
         query.order_by.return_value.offset.assert_called_once_with(20)
+
+    def test_get_filtered_users_applies_sorting_to_the_paginated_query(self):
+        query = MagicMock()
+        ordered = query.order_by.return_value
+        ordered.offset.return_value.limit.return_value.all.return_value = []
+
+        with patch("src.features.users.repository._active_users_query", return_value=query):
+            repository.get_filtered_users(self.db, None, None, 10, 1, SortType.EMAIL, SortOrder.ASC)
+
+        query.order_by.assert_called_once()
+        ordered.offset.assert_called_once_with(0)
+
+    def test_fetch_filtered_users_passes_sort_params_to_repository(self):
+        params = PaginatedFilteredUsersRequestSchema.model_validate({"sortBy": "lastName", "sortOrder": "ASC"})
+
+        with (
+            patch("src.features.users.service.repository.count_filtered_users", return_value=0),
+            patch("src.features.users.service.repository.get_filtered_users", return_value=[]) as get_filtered,
+        ):
+            service.fetch_filtered_users(self.db, params)
+
+        get_filtered.assert_called_once_with(self.db, None, None, 10, 1, SortType.LAST_NAME, SortOrder.ASC)
+
+
+class ApplySortingTests(unittest.TestCase):
+    @staticmethod
+    def _order_by_sql(sort_by, sort_order):
+        query = repository._apply_sorting(Session().query(User), sort_by, sort_order)
+        sql = str(query.statement.compile(dialect=postgresql.dialect()))
+        return sql.split("ORDER BY", 1)[1].strip()
+
+    def test_defaults_to_newest_first(self):
+        self.assertEqual(self._order_by_sql(None, None), "users.created_at DESC, users.id")
+
+    def test_sorts_by_requested_column_and_direction(self):
+        self.assertEqual(self._order_by_sql(SortType.EMAIL, SortOrder.ASC), "users.email ASC, users.id")
+        self.assertEqual(self._order_by_sql(SortType.LAST_NAME, SortOrder.DESC), "users.last_name DESC, users.id")
+
+    def test_sort_by_without_order_is_descending(self):
+        self.assertEqual(self._order_by_sql(SortType.EMAIL, None), "users.email DESC, users.id")
+
+    def test_sort_order_without_sort_by_uses_created_at(self):
+        self.assertEqual(self._order_by_sql(None, SortOrder.ASC), "users.created_at ASC, users.id")
+
+    def test_unknown_column_raises(self):
+        with patch.dict("src.features.users.repository.USER_SORT_HELPER", clear=True):
+            with self.assertRaises(ValueError):
+                repository._apply_sorting(Session().query(User), SortType.EMAIL, SortOrder.ASC)
 
 
 if __name__ == "__main__":

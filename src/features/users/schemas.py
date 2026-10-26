@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
-from sqlalchemy.dialects.postgresql import ext
 
-from src.constants import UserRoles
+from src.constants import SortOrder, SortType, UserRoles
 from src.features.users import schema_fields
 
 
@@ -102,8 +101,13 @@ class PaginatedFilteredUsersRequestSchema(BaseModel):
     role: UserRoles | None = None
     size: int = Field(default=10, ge=1, le=100)
     page: int = Field(default=1, ge=1)
+    sort_by: SortType | None = Field(alias="sortBy", default=None)
+    sort_order: SortOrder | None = Field(alias="sortOrder", default=None)
 
-    
+    @field_validator("sort_by", mode="before")
+    @classmethod
+    def validate_sort_by(cls, value):
+        return schema_fields.serialize_sort_by(value)
 
 
 class PaginatedFilteredUsersResponseSchema(BaseModel):
