@@ -1,7 +1,6 @@
 """Shared field normalization and validation for user-related Pydantic schemas."""
 
-from src.constants import MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, SortType
-from src.features.users.helper import SERIALIZED_USER_SORT_TYPE
+from src.constants import MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
 
 
 def validate_person_name(value: str, label: str) -> str:
@@ -57,16 +56,3 @@ def validate_optional_new_password(value: str | None) -> str | None:
     if len(value) > MAX_PASSWORD_LENGTH:
         raise ValueError(f"Password must be less than {MAX_PASSWORD_LENGTH} characters long")
     return value
-
-
-def serialize_sort_by(value: str | SortType | None) -> SortType | None:
-    """Map a camelCase API sort key (e.g. ``lastName``) to its ``SortType``."""
-    if isinstance(value, SortType):
-        return value
-    if not value:
-        return None
-    snake_case = "".join(f"_{char.lower()}" if char.isupper() else char for char in value.strip())
-    sort_type = SERIALIZED_USER_SORT_TYPE.get(snake_case)
-    if sort_type is None:
-        raise ValueError(f"Unknown sort type {value}")
-    return sort_type

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Query, Session
 from pydantic import EmailStr
 
 from src.core.logger import logger
-from src.constants import SortOrder, SortType, UserRoles
+from src.constants import DEFAULT_SORT, SortOrder, SortType, UserRoles
 from src.features.users.schemas import CreateUserData
 from src.features.users.utils import create_deactivated_email
 from src.features.auth.utils import hash_password
@@ -93,12 +93,10 @@ def get_filtered_users(
 
 def _apply_sorting(query: Query, sort_by: SortType | None, sort_order: SortOrder | None) -> Query:
     """Order by ``sort_by`` (default ``created_at``). With no sort params at all, newest users come first."""
-    key = sort_by.value if sort_by else "created_at"
-    column = USER_SORT_HELPER.get(key)
-    if column is None:
-        raise ValueError(f"Trying to order by unknown column: {key}")
+    column = USER_SORT_HELPER.get(sort_by, DEFAULT_SORT.value)
     if not sort_by and not sort_order:
         sort_order = SortOrder.DESC
-    direction = asc if sort_order == SortOrder.ASC else desc
+    
+    direction = asc if sort_order is not None and sort_order == SortOrder.ASC else desc
 
     return query.order_by(direction(column), User.id)

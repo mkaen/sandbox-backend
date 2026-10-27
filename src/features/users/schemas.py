@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic.alias_generators import to_camel
 
 from src.constants import SortOrder, SortType, UserRoles
 from src.features.users import schema_fields
@@ -95,19 +96,22 @@ class UserUpdatedDataRequestSchema(BaseModel):
 
 
 class PaginatedFilteredUsersRequestSchema(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra='forbid')
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=to_camel,
+        extra='forbid')
 
-    name_filter: str | None = Field(default=None, alias="nameFilter", max_length=30)
+    name_filter: str | None = Field(default=None, max_length=30)
     role: UserRoles | None = None
     size: int = Field(default=10, ge=1, le=100)
     page: int = Field(default=1, ge=1)
-    sort_by: SortType | None = Field(alias="sortBy", default=None)
-    sort_order: SortOrder | None = Field(alias="sortOrder", default=None)
+    sort_by: SortType | None = None
+    sort_order: SortOrder | None = None
 
-    @field_validator("sort_by", mode="before")
-    @classmethod
-    def validate_sort_by(cls, value):
-        return schema_fields.serialize_sort_by(value)
+    # @field_validator("sort_by", mode="before")
+    # @classmethod
+    # def validate_sort_by(cls, value):
+    #     return schema_fields.serialize_sort_by(value)
 
 
 class PaginatedFilteredUsersResponseSchema(BaseModel):

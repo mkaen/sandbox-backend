@@ -6,8 +6,9 @@ class UserRoles(Enum):
 
 
 class SortType(Enum):
-    LAST_NAME = "last_name"
+    LAST_NAME = "lastName"
     EMAIL = "email"
+    CREATED_AT = "created_at"
 
 
 class SortOrder(str, Enum):
@@ -20,3 +21,5 @@ class ImageTypesFolderName(Enum):
 
 MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 30
+
+DEFAULT_SORT = SortType.CREATED_AT

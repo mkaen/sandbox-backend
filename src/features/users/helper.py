@@ -3,14 +3,7 @@ from src.db.models import User
 
 
 USER_SORT_HELPER = {
-    "last_name": User.last_name,
-    "email": User.email,
-    "created_at": User.created_at
+    SortType.LAST_NAME: User.last_name,
+    SortType.EMAIL: User.email,
+    SortType.CREATED_AT: User.created_at
 }
-
-SERIALIZED_USER_SORT_TYPE = {
-    "last_name": SortType.LAST_NAME,
-    "email": SortType.EMAIL
-}
-
-
