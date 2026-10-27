@@ -8,6 +8,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from src.constants import SortOrder, SortType, UserRoles
+from src.features.users.helper import USER_SORT_HELPER
 from src.db.models import User
 from src.features.users import repository, service
 from src.features.users.schemas import PaginatedFilteredUsersRequestSchema, UserUpdatedDataRequestSchema
@@ -114,6 +115,9 @@ class UsersServiceTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             PaginatedFilteredUsersRequestSchema.model_validate({"nameFilter": None, "page": 0})
 
+    def test_all_sort_types_mapped(self):
+        self.assertEqual(set(USER_SORT_HELPER), set(SortType))
+
     def test_get_filtered_users_offsets_by_zero_based_page_index(self):
         query = MagicMock()
         query.order_by.return_value.offset.return_value.limit.return_value.all.return_value = []
@@ -165,12 +169,6 @@ class ApplySortingTests(unittest.TestCase):
 
     def test_sort_order_without_sort_by_uses_created_at(self):
         self.assertEqual(self._order_by_sql(None, SortOrder.ASC), "users.created_at ASC, users.id")
-
-    def test_unknown_column_raises(self):
-        with patch.dict("src.features.users.repository.USER_SORT_HELPER", clear=True):
-            with self.assertRaises(ValueError):
-                repository._apply_sorting(Session().query(User), SortType.EMAIL, SortOrder.ASC)
-
 
 if __name__ == "__main__":
     unittest.main()

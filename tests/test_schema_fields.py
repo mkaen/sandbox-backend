@@ -37,22 +37,24 @@ class SchemaFieldsTests(unittest.TestCase):
     def test_validate_person_name_normalizes(self):
         self.assertEqual(schema_fields.validate_person_name("  ada ", "First name"), "Ada")
 
-    def test_serialize_sort_by_converts_camel_case_to_sort_type(self):
-        self.assertEqual(schema_fields.serialize_sort_by("lastName"), SortType.LAST_NAME)
+    def test_filter_request_parses_sort_by_enum_values(self):
+        self.assertEqual(
+            PaginatedFilteredUsersRequestSchema.model_validate({"sortBy": "lastName"}).sort_by,
+            SortType.LAST_NAME,
+        )
+        self.assertEqual(
+            PaginatedFilteredUsersRequestSchema.model_validate({"sortBy": "email"}).sort_by,
+            SortType.EMAIL,
+        )
+        self.assertEqual(
+            PaginatedFilteredUsersRequestSchema.model_validate({"sortBy": SortType.EMAIL}).sort_by,
+            SortType.EMAIL,
+        )
 
-    def test_serialize_sort_by_keeps_values_without_uppercase(self):
-        self.assertEqual(schema_fields.serialize_sort_by("email"), SortType.EMAIL)
-
-    def test_serialize_sort_by_accepts_sort_type(self):
-        self.assertEqual(schema_fields.serialize_sort_by(SortType.EMAIL), SortType.EMAIL)
-
-    def test_serialize_sort_by_empty_returns_none(self):
-        self.assertIsNone(schema_fields.serialize_sort_by(None))
-        self.assertIsNone(schema_fields.serialize_sort_by(""))
-
-    def test_serialize_sort_by_unknown_raises(self):
-        with self.assertRaises(ValueError):
-            schema_fields.serialize_sort_by("createdAt")
+    def test_filter_request_omitted_sort_by_is_none(self):
+        params = PaginatedFilteredUsersRequestSchema.model_validate({})
+        self.assertIsNone(params.sort_by)
+        self.assertIsNone(params.sort_order)
 
     def test_filter_request_parses_camel_case_sort_by(self):
         params = PaginatedFilteredUsersRequestSchema.model_validate({"sortBy": "lastName", "sortOrder": "DESC"})

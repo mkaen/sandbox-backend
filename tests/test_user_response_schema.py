@@ -14,6 +14,7 @@ def _user(**overrides):
         phone="1234567",
         email="ada@example.com",
         role=UserRoles.USER,
+        is_archived=False,
         image_reference=None,
     )
     data.update(overrides)
@@ -33,6 +34,7 @@ class UserResponseSchemaTests(unittest.TestCase):
                 "phone": "1234567",
                 "email": "ada@example.com",
                 "role": UserRoles.USER,
+                "isArchived": False,
             },
         )
 
