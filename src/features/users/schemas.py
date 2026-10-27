@@ -108,11 +108,6 @@ class PaginatedFilteredUsersRequestSchema(BaseModel):
     sort_by: SortType | None = None
     sort_order: SortOrder | None = None
 
-    # @field_validator("sort_by", mode="before")
-    # @classmethod
-    # def validate_sort_by(cls, value):
-    #     return schema_fields.serialize_sort_by(value)
-
 
 class PaginatedFilteredUsersResponseSchema(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
