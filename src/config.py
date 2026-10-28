@@ -42,12 +42,17 @@ class Settings(BaseSettings):
 
     @field_validator("DATABASE_URL")
     @classmethod
-    def rewrite_local_compose_db_host(cls, value: str) -> str:
-        if not _running_in_docker():
-            return value
-        for host in _LOCAL_DB_HOSTS:
-            if host in value:
-                return value.replace(host, _COMPOSE_DB_HOST, 1)
+    def normalize_database_url(cls, value: str) -> str:
+        if _running_in_docker():
+            for host in _LOCAL_DB_HOSTS:
+                if host in value:
+                    value = value.replace(host, _COMPOSE_DB_HOST, 1)
+                    break
+        # SQLAlchemy 2.0.5x treats bare postgresql:// as psycopg3; we ship psycopg2-binary.
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg2://" + value[len("postgresql://") :]
+        if value.startswith("postgres://"):
+            return "postgresql+psycopg2://" + value[len("postgres://") :]
         return value
 
     @field_validator("CORS_ORIGINS", mode="before")

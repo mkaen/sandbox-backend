@@ -1,3 +1,4 @@
+import math
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -9,7 +10,7 @@ from src.core.security import clear_auth_cookies
 from src.db.models import User
 from src.features.auth import utils as auth_utils, service as auth_service
 from src.features.users import repository
-from src.features.users.schemas import UserResponseSchema, UserSetIsArchivedResponseSchema, UserUpdatedDataRequestSchema
+from src.features.users.schemas import PaginatedFilteredUsersRequestSchema, PaginatedFilteredUsersResponseSchema, UserResponseSchema, UserSetIsArchivedResponseSchema, UserUpdatedDataRequestSchema
 from src.features.r2 import service as r2_service
 from src.features.users.utils import handle_role_change_permission
 
@@ -25,9 +26,25 @@ def get_user_by_id(db: Session, user_id: int) -> UserResponseSchema:
     return UserResponseSchema.model_validate(_get_active_user(db, user_id))
 
 
+def fetch_filtered_users(db: Session, params: PaginatedFilteredUsersRequestSchema) -> PaginatedFilteredUsersResponseSchema:
+    total = repository.count_filtered_users(db, params.name_filter, params.role)
+    users = repository.get_filtered_users(
+        db, params.name_filter, params.role, params.size, params.page, params.sort_by, params.sort_order
+    )
+    return PaginatedFilteredUsersResponseSchema(
+        total_pages=math.ceil(total / params.size),
+        page=params.page,
+        size=params.size,
+        total_users=total,
+        filtered_list=[UserResponseSchema.model_validate(u) for u in users],
+    )
+
+
 def update_user_archive_value(db: Session, user_id: int, value: bool) -> UserSetIsArchivedResponseSchema:
     user = _get_active_user(db, user_id)
     updated_user = repository.set_user_archive_value(db, user, value)
+    logger.info(f"Update user {user_id} archive value to {value}.")
+
     return UserSetIsArchivedResponseSchema.model_validate(updated_user)
 
 
@@ -42,40 +59,67 @@ def update_user_data(user_id: int, current_user: User, db: Session, data: UserUp
     user = _get_active_user(db, user_id)
     is_self_user = current_user.id == user_id
 
-    if data.role and is_self_user:
+    if is_self_user and data.role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User {current_user.id} cannot change self role",
         )
+    user, changed_data = _validate_and_update_user_values(user, data, db, is_self_user, current_user.id)
+    
+    if data.role and handle_role_change_permission(data.role, current_user, user):
+        user.role = data.role
+        changed_data.append("Role")
+    
+    changed_data = ", ".join(changed_data)
+    logger.info(f"Sucessfully updated user {user} data: {changed_data}")
 
-    if user.first_name != data.first_name:
+    repository.save_user(db, user)
+
+    return UserResponseSchema.model_validate(user)
+
+
+def _validate_and_update_user_values(user: User, data: UserUpdatedDataRequestSchema, db: Session, is_self: bool, current_user_id: int) -> User:
+    """Validate data fields and update only different user values."""
+    changed_data = []
+    if data.first_name and data.first_name != user.first_name:
         user.first_name = data.first_name
-    if user.last_name != data.last_name:
+        changed_data.append("First name")
+    if data.last_name and data.last_name != user.last_name:
         user.last_name = data.last_name
-    if user.email != data.email:
+        changed_data.append("Last name")
+    if data.email and data.email != user.email:
         existing = repository.get_user_by_email(db, data.email)
         if existing and existing.id != user.id:
             logger.info(f"Cannot update email. User with email {data.email} already exists.")
             raise HTTPException(status_code=400, detail=f"Cannot update email to: {data.email}")
         user.email = data.email
-    if user.phone != data.phone:
+        changed_data.append("E-mail")
+    if data.phone and data.phone != user.phone:
         user.phone = data.phone
+        changed_data.append("Phone number")
+    user, is_password_changed = _update_user_password(user, data, is_self, current_user_id)
+    if is_password_changed:
+        changed_data.append(is_password_changed) 
+    return user, changed_data
 
-    if data.role and handle_role_change_permission(data.role, current_user, user):
-        user.role = data.role
 
+def _update_user_password(user: User, data: UserUpdatedDataRequestSchema, is_self: bool, current_user_id: int):
+    changed_data = []
     if all([data.old_password, data.new_password]):
+        if not is_self:
+            raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User {current_user_id} cannot change user {user.id} password",
+        )
         if not auth_utils.verify_password(data.old_password, user.password):
             raise HTTPException(
                 status_code=400,
                 detail="Client's entered old password does not match, cannot change password.",
             )
         user.password = auth_utils.hash_password(data.new_password)
-        logger.info("User %s password is updated", user_id)
-
-    repository.save_user(db, user)
-
-    return UserResponseSchema.model_validate(user)
+        logger.info("User %s password is updated", user.id)
+        changed_data.append("Password")
+    return user, changed_data
 
 
 def get_profile_image_by_id(user_id: int, db: Session) -> tuple[bytes, str]:

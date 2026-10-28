@@ -52,7 +52,10 @@ class RequestLoggingMiddleware:
                 "status_code": status_code,
                 "duration_ms": duration_ms,
             }
-            message = f"{request.method} {request.url.path} {status_code} {duration_ms}ms"
+            message = (
+                f"New incoming request {request.method} {request.url.path} "
+                f"{status_code} {duration_ms}ms"
+            )
             if status_code >= 500:
                 logger.error(message, extra=extra)
             else:
