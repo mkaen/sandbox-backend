@@ -10,7 +10,7 @@ from src.features.auth import service
 from src.features.auth.schemas import LoginRequestSchema, RegisterRequestSchema
 from src.features.users.schemas import UserResponseSchema
 
-auth_router_v1 = APIRouter(prefix="/v1/auth", tags=["auth"])
+auth_router_v1 = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
 
 @auth_router_v1.post("/login", status_code=200, summary="Login user")
