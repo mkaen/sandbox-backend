@@ -23,3 +23,5 @@ MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 30
 
 DEFAULT_SORT = SortType.CREATED_AT
+
+POPULAR_CRYPTO_ASSETS = ["bitcoin", "ethereum", "solana", "sui"]
