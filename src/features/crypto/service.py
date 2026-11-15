@@ -5,8 +5,8 @@ from src.constants import POPULAR_CRYPTO_ASSETS
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.exceptions import CoinGeckoError
 from src.features.crypto import repository as r
-from src.providers.coingecko import schemas as schema
 from src.db.models import CryptoAsset
+from src.features.crypto import schemas as sch
 from src.core.logger import logger
 
 
@@ -44,6 +44,8 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
     
 
 
-def get_popular_assets(db: Session) -> list[CryptoAsset]:
+def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     """Fetch popular crypto assets from database."""
-    return r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
+    from_db = r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
+    serialized_assets = [sch.PopularAssetSchema.model_validate(asset) for asset in from_db]
+    return sch.PopularAssetsResponseSchema(assets=serialized_assets)
