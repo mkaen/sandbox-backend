@@ -15,7 +15,7 @@ class PopularAssetSchema(BaseModel):
     price_usd: float = Field(alias="priceUsd")
     ath_change: float = Field(alias="athChange")
     change_24h: float = Field(alias="change24h")
-    market_cap: int = Field(alias="marketCap")
+    market_cap: int = Field(alias="marketCapUsd")
     market_cap_rank: int = Field(alias="marketCapRank")
     image_thumb: str = Field(alias="imageThumb")
     updated_at: datetime = Field(alias="updatedAt")
