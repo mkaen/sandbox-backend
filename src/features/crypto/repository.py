@@ -39,6 +39,6 @@ def update_asset_values(db: Session, existing_asset: CryptoAsset, to_update: Cry
     existing_asset.updated_at = to_update.updated_at
     db.commit()
     db.refresh(existing_asset)
-    logger.info(f"Crypto asset {existing_asset.upper()} updated successfully.")
+    logger.info(f"Crypto asset {existing_asset} updated successfully.")
     return existing_asset
 

@@ -20,8 +20,8 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
         return []
 
     try:
+        fetched_assets = []
         for coin in assets:
-            assets = []
             asset = await coingecko.get_coin_data(id=coin)
             fetched_coin = CryptoAsset(
                 symbol=asset.symbol,
@@ -36,9 +36,9 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
                 updated_at=asset.last_updated
             )
             fetched_coin = r.save_asset_info(db, fetched_coin)
-            assets.append(fetched_coin)
-        logger.info(f"Fetched total {len(assets)} assets from CoinGecko.")
-        return assets
+            fetched_assets.append(fetched_coin)
+        logger.info(f"Fetched total {len(fetched_assets)} assets from CoinGecko.")
+        return fetched_assets
     except CoinGeckoError as e:
         raise HTTPException(status_code=502, detail="Unable to fetch crypto prices") from e
     
@@ -46,6 +46,10 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
 
 def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     """Fetch popular crypto assets from database."""
-    from_db = r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
-    serialized_assets = [sch.PopularAssetSchema.model_validate(asset) for asset in from_db]
+    raw_assets = r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
+    serialized_assets = [sch.PopularAssetSchema.model_validate(asset) for asset in raw_assets]
     return sch.PopularAssetsResponseSchema(assets=serialized_assets)
+
+
+async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session):
+    await fetch_and_save_assets(ck_client, db, POPULAR_CRYPTO_ASSETS)

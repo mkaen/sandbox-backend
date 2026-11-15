@@ -53,5 +53,5 @@ class CryptoAsset(Base):
 
 
     def __repr__(self) -> str:
-        return self.currency
+        return self.currency.title()
     
