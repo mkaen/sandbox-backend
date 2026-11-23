@@ -32,7 +32,7 @@ class User(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
     def __repr__(self):
-        return self.first_name + " " + self.last_name
+        return f"{self.first_name} {self.last_name}"
 
 
 class CryptoAsset(Base):
@@ -54,4 +54,3 @@ class CryptoAsset(Base):
 
     def __repr__(self) -> str:
         return self.currency.title()
-    
