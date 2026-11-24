@@ -1,6 +1,7 @@
-from src.constants import UserRoles
-from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, DateTime, Enum, Uuid
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, Float, ForeignKey, Integer, String, DateTime, Enum, Uuid
 from sqlalchemy.sql import func
+
+from src.constants import UserRoles, CryptoSentiment
 from src.db.database import Base
 
 
@@ -54,3 +55,18 @@ class CryptoAsset(Base):
 
     def __repr__(self) -> str:
         return self.currency.title()
+
+
+class FearAndGreedIndex(Base):
+    __tablename__ = "fear_and_greed_index"
+    __table_args__ = (
+        CheckConstraint(
+            "value >= 0 AND value <= 100",
+            name="ck_fear_and_greed_index_value_range",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    created_at = Column(DateTime, nullable=False, index=True)
+    value = Column(Integer, nullable=False)
+    sentiment = Column(Enum(CryptoSentiment, name='sentiment'), nullable=False)
