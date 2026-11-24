@@ -11,19 +11,19 @@ from src.db.models import User
 from src.features.users.dependencies import require_admin
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.dependencies import get_coingecko_client
-from src.features.crypto.schemas import PopularAssetsResponseSchema
+from src.features.crypto.schemas import PopularAssetsResponseSchema, FearAndGreedIndexRespone
 
 crypto_router_v1 = APIRouter(prefix="/v1/crypto", tags=["Crypto"])
 
 
-@crypto_router_v1.get("/popular-assets", status_code=200)
+@crypto_router_v1.get("/popular-assets", status_code=200, summary="Get popular crypto assets")
 async def get_popular_asset_prices(
     db: Annotated[Session, Depends(get_db)],
 ) -> PopularAssetsResponseSchema:
     return s.get_popular_assets(db)
 
 
-@crypto_router_v1.post("/refresh-popular-assets-manually", status_code=200)
+@crypto_router_v1.post("/refresh-popular-assets-manually", status_code=200, summary="Refresh and update Popular Asset Data manually")
 async def refresh_asset_info_manually(
     db: Annotated[Session, Depends(get_db)],
     ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],
@@ -31,3 +31,13 @@ async def refresh_asset_info_manually(
     _: Annotated[User, Depends(require_admin)],
 ):
     await s.refresh_asset_info_manually(ck_client, db, redis)
+
+
+@crypto_router_v1.get("/refresh-fear-and-greed", status_code=200, summary="Refresh and update fear and greed index manually")
+async def refresh_fear_and_greed_index_manually(
+    db: Annotated[Session, Depends(get_db)],
+    ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    _: Annotated[User, Depends(require_admin)],
+) -> FearAndGreedIndexRespone:
+    return await s.refresh_fear_and_greed_index_manually(ck_client, db, redis)

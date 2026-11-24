@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
+from src.constants import CryptoSentiment
+
 
 class FiatUsd(BaseModel):
     usd: float
@@ -20,6 +22,7 @@ class CoinImage(BaseModel):
 
 class CoinDataResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
+
     id: str
     symbol: str
     name: str
@@ -27,3 +30,19 @@ class CoinDataResponse(BaseModel):
     last_updated: datetime | None = None
     market_data: CoinMarketData
     image: CoinImage
+
+
+class FearAndGreedIndexPayload(BaseModel):
+    value: int = Field(ge=0, le=100)
+    sentiment: CryptoSentiment
+
+
+class GlobalMarketData(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    fear_and_greed_index: FearAndGreedIndexPayload
+    updated_at: int
+
+
+class CoinGeckoGlobalResponse(BaseModel):
+    data: GlobalMarketData

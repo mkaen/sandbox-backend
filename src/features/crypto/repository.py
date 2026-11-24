@@ -1,7 +1,7 @@
 from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
-from src.db.models import CryptoAsset
+from src.db.models import CryptoAsset, FearAndGreedIndex
 from src.core.logger import logger
 
 REFRESH_COOLDOWN_KEY = "crypto:popular-assets:refresh-cooldown"
@@ -58,4 +58,12 @@ def update_asset_values(db: Session, existing_asset: CryptoAsset, to_update: Cry
     db.refresh(existing_asset)
     logger.info(f"Crypto asset {existing_asset} updated successfully.")
     return existing_asset
+
+
+def save_fear_and_greed_index(db: Session, data: FearAndGreedIndex) -> FearAndGreedIndex:
+    """Save Fear and Greed Index data into database."""
+    db.add(data)
+    db.commit()
+    db.refresh(data)
+    return data
 

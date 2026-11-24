@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from src.features.crypto import schema_fields as sf
+from src.constants import CryptoSentiment
 
 
 class PopularAssetSchema(BaseModel):
@@ -56,3 +57,24 @@ class PopularAssetsResponseSchema(BaseModel):
         serialize_by_alias=True
     )
     assets: list[PopularAssetSchema]
+
+
+class FearAndGreedIndexRespone(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
+    updated_at: datetime = Field(validation_alias="created_at", serialization_alias="updatedAt")
+    value: int
+    sentiment: CryptoSentiment
+
+    @field_serializer("updated_at", mode="plain")
+    @classmethod
+    def validate_updated_at(cls, value):
+        return value.strftime("%H:%M %d.%m.%Y")
+
+    @field_serializer("sentiment", mode="plain")
+    @classmethod
+    def validate_sentiment(cls, value: CryptoSentiment):
+        return value.value

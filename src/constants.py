@@ -28,5 +28,13 @@ POPULAR_CRYPTO_ASSETS = ["bitcoin", "ethereum", "solana", "sui"]
 
 
 CACHE_TIME = {
-    "CG_popular_asset_refresh": 15
+    "CG_popular_asset_refresh": 15,
+    "CG_fear_and_greed_index_refresh": 10
 }
+
+class CryptoSentiment(Enum):
+    EXTREME_FEAR = "extreme_fear"
+    FEAR = "fear"
+    NEUTRAL = "neutral"
+    GREED = "greed"
+    EXTREME_GREED = "extreme_greed"

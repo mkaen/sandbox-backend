@@ -1,8 +1,9 @@
 import httpx
+from pydantic import ValidationError
 
 from src.config import settings
 from .exceptions import CoinGeckoError
-from .schemas import CoinDataResponse
+from .schemas import CoinDataResponse, CoinGeckoGlobalResponse, GlobalMarketData
 
 DEFAULT_CG_BASE_URL = "https://api.coingecko.com/api/v3"
 
@@ -24,7 +25,7 @@ class CoinGeckoClient:
         id: str,
         include_localization: bool = False,
         include_tickers: bool = False,
-    ) -> dict:
+    ) -> CoinDataResponse:
         try:
             r = await self._http.get(
                 f"/coins/{id}",
@@ -34,7 +35,20 @@ class CoinGeckoClient:
                     "tickers": str(include_tickers),
                 },
             )
+
             r.raise_for_status()
             return CoinDataResponse.model_validate(r.json())
+
         except httpx.HTTPError as e:
             raise CoinGeckoError(str(e)) from e
+
+    async def get_fear_and_greed_index(self) -> GlobalMarketData:
+        try:
+            r = await self._http.get("/global", headers=self._api_key_headers or None)
+            r.raise_for_status()
+            
+            return CoinGeckoGlobalResponse.model_validate(r.json()).data
+
+        except (httpx.HTTPError, ValidationError) as e:
+            raise CoinGeckoError(str(e)) from e
+

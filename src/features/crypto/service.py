@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import HTTPException
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
@@ -8,9 +10,32 @@ from src.constants import CACHE_TIME, POPULAR_CRYPTO_ASSETS
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.exceptions import CoinGeckoError
 from src.features.crypto import repository as r
-from src.db.models import CryptoAsset
+from src.db.models import CryptoAsset, FearAndGreedIndex
 from src.features.crypto import schemas as sch
 from src.core.logger import logger
+
+
+
+async def fetch_and_save_fear_and_greed_index(coingecko: CoinGeckoClient, db: Session):
+    """
+    Fetch Fear and Greed Index data from Coingecko and update database.
+    
+    Later this function is used with cron job to update assets prices etc regulary.
+    """
+    try:
+        global_data = await coingecko.get_fear_and_greed_index()
+        index = global_data.fear_and_greed_index
+        created_at = datetime.fromtimestamp(global_data.updated_at, tz=timezone.utc).replace(tzinfo=None)
+        fetched_data = FearAndGreedIndex(
+            created_at=created_at,
+            value=index.value,
+            sentiment=index.sentiment,
+        )
+        saved = r.save_fear_and_greed_index(db, fetched_data)
+        logger.info("SUCCESS: Fetched Fear and Greed Index from CoinGecko")
+        return saved
+    except CoinGeckoError as e:
+        raise HTTPException(status_code=502, detail="Unable to fetch Fear and Greed index from CoinGecko") from e
 
 
 async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets: list[str]) -> list[CryptoAsset]:
@@ -44,7 +69,6 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
         return fetched_assets
     except CoinGeckoError as e:
         raise HTTPException(status_code=502, detail="Unable to fetch crypto prices") from e
-    
 
 
 def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
@@ -52,6 +76,37 @@ def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     raw_assets = r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
     serialized_assets = [sch.PopularAssetSchema.model_validate(asset) for asset in raw_assets]
     return sch.PopularAssetsResponseSchema(assets=serialized_assets)
+
+
+async def refresh_fear_and_greed_index_manually(
+    ck_client: CoinGeckoClient, db: Session, redis: Redis,
+) -> sch.FearAndGreedIndexRespone:
+    """Refresh Fear and Greed Index from CoinGecko, at most once per cooldown period."""
+
+    cooldown_minutes = CACHE_TIME["CG_fear_and_greed_index_refresh"]
+    try:
+        acquired = await r.acquire_refresh_cooldown(redis, cooldown_minutes * 60)
+        if not acquired:
+            retry_after = await r.get_refresh_cooldown_ttl(redis)
+            raise WNCHTTPException(
+                status_code=429,
+                detail=f"Fear and Greed Index can be refreshed once every {cooldown_minutes} minutes",
+                notification_code="FEAR_AND_GREED_INDEX_REFRESH_TIMEOUT",
+                headers={"Retry-After": str(max(retry_after, 1))},
+            )
+    except RedisError as e:
+        logger.error(f"Redis unavailable while checking refresh cooldown: {e}")
+        raise HTTPException(status_code=503, detail="Refresh is temporarily unavailable") from e
+
+    refreshed = False
+    try:
+        response = await fetch_and_save_fear_and_greed_index(ck_client, db)
+        refreshed = True
+        return sch.FearAndGreedIndexRespone.model_validate(response)
+    finally:
+        if not refreshed:
+            await _release_refresh_cooldown_safely(redis)
+
 
 
 async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, redis: Redis):
