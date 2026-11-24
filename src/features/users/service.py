@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.features.r2.service import remove_image
 from src.core.logger import logger
-from src.constants import ImageTypesFolderName
+from src.constants import ImageTypesFolderName, UserRoles
 from src.features.utils import generate_uuid
 from src.core.security import clear_auth_cookies
 from src.db.models import User
@@ -64,7 +64,15 @@ def update_user_data(user_id: int, current_user: User, db: Session, data: UserUp
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User {current_user.id} cannot change self role",
         )
+    
+    
     user, changed_data = _validate_and_update_user_values(user, data, db, is_self_user, current_user.id)
+
+    if changed_data and not is_self_user and user.role == UserRoles.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User {current_user.id} cannot change other admin {user} data",
+        )
     
     if data.role and handle_role_change_permission(data.role, current_user, user):
         user.role = data.role

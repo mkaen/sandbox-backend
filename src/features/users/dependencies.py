@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 
 from src.constants import UserRoles
 from src.db.models import User
+from src.db.database import get_db
 from src.features.auth.dependencies import get_current_user
 from src.core.exceptions import WithNotificationCodeHTTPException
 
@@ -39,4 +40,3 @@ def require_admin(current_user: Annotated[User, Depends(get_current_user)],) -> 
             detail=f"It's forbidden to fetch users by {current_user}",
             notification_code='FORBIDDEN_REQUEST'
         )
-
