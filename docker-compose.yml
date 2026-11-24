@@ -16,6 +16,7 @@ services:
     environment:
       ENVIRONMENT: development
       COOKIE_SECURE: "false"
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - ./src:/app/src:ro
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
@@ -23,6 +24,20 @@ services:
       db:
         condition: service_healthy
         required: false
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: sandbox-backend-dev-redis
+    ports:
+      # Exposed on localhost only, so you can also run uvicorn on the host (REDIS_URL=redis://localhost:6379/0).
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   db:
     profiles: ["local-db"]

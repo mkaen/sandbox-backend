@@ -1,7 +1,10 @@
 from fastapi import HTTPException
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
 from sqlalchemy.orm import Session
 
-from src.constants import POPULAR_CRYPTO_ASSETS
+from src.core.exceptions import WithNotificationCodeHTTPException as WNCHTTPException
+from src.constants import CACHE_TIME, POPULAR_CRYPTO_ASSETS
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.exceptions import CoinGeckoError
 from src.features.crypto import repository as r
@@ -51,5 +54,35 @@ def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     return sch.PopularAssetsResponseSchema(assets=serialized_assets)
 
 
-async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session):
-    await fetch_and_save_assets(ck_client, db, POPULAR_CRYPTO_ASSETS)
+async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, redis: Redis):
+    """Refresh popular assets from CoinGecko, at most once per cooldown period."""
+    cooldown_minutes = CACHE_TIME["CG_popular_asset_refresh"]
+    try:
+        acquired = await r.acquire_refresh_cooldown(redis, cooldown_minutes * 60)
+        if not acquired:
+            retry_after = await r.get_refresh_cooldown_ttl(redis)
+            raise WNCHTTPException(
+                status_code=429,
+                detail=f"Popular assets can be refreshed once every {cooldown_minutes} minutes",
+                notification_code="ASSET_MANUAL_REFRESH_TIMEOUT",
+                headers={"Retry-After": str(max(retry_after, 1))},
+            )
+    except RedisError as e:
+        logger.error(f"Redis unavailable while checking refresh cooldown: {e}")
+        raise HTTPException(status_code=503, detail="Refresh is temporarily unavailable") from e
+
+    refreshed = False
+    try:
+        await fetch_and_save_assets(ck_client, db, POPULAR_CRYPTO_ASSETS)
+        refreshed = True
+    finally:
+        if not refreshed:
+            await _release_refresh_cooldown_safely(redis)
+
+
+async def _release_refresh_cooldown_safely(redis: Redis) -> None:
+    """Allow a retry after a failed refresh; never mask the original error."""
+    try:
+        await r.release_refresh_cooldown(redis)
+    except RedisError as e:
+        logger.error(f"Could not release refresh cooldown: {e}")

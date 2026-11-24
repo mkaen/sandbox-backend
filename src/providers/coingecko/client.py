@@ -4,12 +4,12 @@ from src.config import settings
 from .exceptions import CoinGeckoError
 from .schemas import CoinDataResponse
 
-DEFAULT_BASE_URL = "https://api.coingecko.com/api/v3"
+DEFAULT_CG_BASE_URL = "https://api.coingecko.com/api/v3"
 
 
 def create_http_client() -> httpx.AsyncClient:
-    base_url = settings.CG_BASE_URL or DEFAULT_BASE_URL
-    return httpx.AsyncClient(base_url=base_url.rstrip("/"), timeout=settings.CG_TOMEOUT)
+    base_url = settings.CG_BASE_URL or DEFAULT_CG_BASE_URL
+    return httpx.AsyncClient(base_url=base_url.rstrip("/"), timeout=settings.CG_TIMEOUT)
 
 
 class CoinGeckoClient:
