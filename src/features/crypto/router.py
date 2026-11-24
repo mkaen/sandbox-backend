@@ -1,10 +1,14 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
+from src.core.redis import get_redis
 from src.features.crypto import service as s
 from src.db.database import get_db
+from src.db.models import User
+from src.features.users.dependencies import require_admin
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.dependencies import get_coingecko_client
 from src.features.crypto.schemas import PopularAssetsResponseSchema
@@ -23,5 +27,7 @@ async def get_popular_asset_prices(
 async def refresh_asset_info_manually(
     db: Annotated[Session, Depends(get_db)],
     ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    _: Annotated[User, Depends(require_admin)],
 ):
-    await s.refresh_asset_info_manually(ck_client, db)
+    await s.refresh_asset_info_manually(ck_client, db, redis)

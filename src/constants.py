@@ -25,3 +25,8 @@ MAX_PASSWORD_LENGTH = 30
 DEFAULT_SORT = SortType.CREATED_AT
 
 POPULAR_CRYPTO_ASSETS = ["bitcoin", "ethereum", "solana", "sui"]
+
+
+CACHE_TIME = {
+    "CG_popular_asset_refresh": 15
+}
