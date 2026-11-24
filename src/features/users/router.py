@@ -19,7 +19,7 @@ from src.features.users.schemas import (
     PaginatedFilteredUsersResponseSchema,
 )
 
-router_v1 = APIRouter(prefix="/v1/users", tags=["users"])
+router_v1 = APIRouter(prefix="/v1/users", tags=["Users"])
 
 
 @router_v1.get("/me")

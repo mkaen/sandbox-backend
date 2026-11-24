@@ -1,5 +1,5 @@
 from src.constants import UserRoles
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Enum, Uuid
+from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, DateTime, Enum, Uuid
 from sqlalchemy.sql import func
 from src.db.database import Base
 
@@ -22,7 +22,7 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     phone = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
     password = Column(String, nullable=False)
     image_reference = Column(Uuid, nullable=True)
     is_archived = Column(Boolean, nullable=False, default=False)
@@ -32,4 +32,25 @@ class User(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
     def __repr__(self):
-        return self.first_name + " " + self.last_name
+        return f"{self.first_name} {self.last_name}"
+
+
+class CryptoAsset(Base):
+    __tablename__ = "crypto_assets"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    symbol = Column(String, nullable=False, unique=True, index=True)
+    updated_at = Column(DateTime, nullable=False)
+    currency = Column(String, nullable=False, unique=True)
+    price_usd = Column(Float, nullable=False)
+    market_cap = Column(BigInteger, nullable=False)
+    market_cap_rank = Column(Integer, nullable=False)
+    ath_change = Column(Float, nullable=False)
+    change_24h = Column(Float, nullable=False)
+    image_thumb = Column(String, nullable=False, unique=True)
+    image_small = Column(String, nullable=False, unique=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+
+
+    def __repr__(self) -> str:
+        return self.currency.title()

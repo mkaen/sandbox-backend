@@ -2,6 +2,13 @@
 
 FastAPI + PostgreSQL backend. Prefer a maintainable, production-grade change over a short hack that “just works”. It has to be proffessional and safe.
 
+## Human review and scope (mandatory)
+
+- **Never** change, delete, or add code beyond what the user explicitly asked for in the current task without **their review and confirmation** first (in chat). If something else looks wrong (bad import, typo, refactor opportunity), **call it out** and wait for approval—or apply it only after they say yes.
+- **Do not** bundle unrelated “drive-by” edits into a fix (no silent cleanup, no “while I was here” changes).
+- **Do not** hide changes: every modified file and every behavioral change must be **visible** in the response (what changed and why). Omitting collateral edits from the summary is not allowed.
+- When the minimal fix and a broader fix differ, prefer the **minimal** diff and ask before expanding scope.
+
 ## Quality bar
 
 - Keep function signatures compact: do not put each parameter on its own line unless the line would exceed ~120 characters. Prefer a single line (or at most two) for signatures and call sites.
@@ -58,4 +65,4 @@ Register new routers in `src/api/router.py`. Keep models in `src/db/models.py`.
 - Do not invent a parallel folder layout or a new app factory.
 - Do not skip authorization on user-scoped routes (`require_self_or_admin` or equivalent).
 - Do not hard-code URLs, secrets, or environment-specific hosts; use `settings`.
-- Do not rewrite working code “while here” unless it is required for the task.
+- Do not rewrite working code “while here” unless it is required for the task and the user has approved it (see **Human review and scope**).

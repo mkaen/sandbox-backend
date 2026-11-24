@@ -17,6 +17,8 @@ dependencies = [
     "alembic>=1.18.5",
     "python-json-logger>=4.1.0",
     "requests>=2.32",
+    "redis>=8.2",
+    "httpx>=0.28",
 ]
 
 [tool.fastapi]

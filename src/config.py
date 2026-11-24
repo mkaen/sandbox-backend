@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:8080"]
     R2_WORKER_URL: str
     R2_UPLOAD_KEY: str
+    CG_BASE_URL: str | None = None
+    CG_API_KEY: str | None = None
+    CG_TIMEOUT: float = 10.0
+    REDIS_URL: str = "redis://localhost:6379/0"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     JWT_SIGNING_ALGORITHM: str = "HS256"
