@@ -49,7 +49,7 @@ class PopularAssetSchema(BaseModel):
     @field_serializer("updated_at", mode="plain")
     @classmethod
     def validate_updated_at(cls, value):
-        return value.strftime("%H:%M %d.%m.%Y")
+        return sf.format_display_datetime(value)
 
 
 class PopularAssetsResponseSchema(BaseModel):
@@ -72,7 +72,7 @@ class FearAndGreedIndexRespone(BaseModel):
     @field_serializer("updated_at", mode="plain")
     @classmethod
     def validate_updated_at(cls, value):
-        return value.strftime("%H:%M %d.%m.%Y")
+        return sf.format_display_datetime(value)
 
     @field_serializer("sentiment", mode="plain")
     @classmethod

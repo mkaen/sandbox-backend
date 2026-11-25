@@ -61,7 +61,7 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
                 image_thumb=asset.image.thumb,
                 image_small=asset.image.small,
                 market_cap_rank=int(asset.market_cap_rank) or 0,
-                updated_at=asset.last_updated
+                updated_at=utils.to_utc_naive(asset.last_updated),
             )
             fetched_coin = r.save_asset_info(db, fetched_coin)
             fetched_assets.append(fetched_coin)

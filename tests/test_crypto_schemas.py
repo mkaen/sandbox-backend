@@ -8,7 +8,7 @@ from src.features.crypto.schemas import FearAndGreedIndexRespone
 class FearAndGreedIndexResponseSchemaTests(unittest.TestCase):
     def test_serializes_from_orm_attributes(self):
         class OrmRow:
-            created_at = datetime(2026, 11, 24, 15, 30, 0)
+            created_at = datetime(2026, 11, 24, 13, 30, 0)  # UTC naive
             value = 19
             sentiment = CryptoSentiment.EXTREME_FEAR
 
