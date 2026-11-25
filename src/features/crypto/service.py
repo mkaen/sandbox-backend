@@ -11,7 +11,7 @@ from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.exceptions import CoinGeckoError
 from src.features.crypto import repository as r
 from src.db.models import CryptoAsset, FearAndGreedIndex
-from src.features.crypto import schemas as sch
+from src.features.crypto import schemas as sch, utils
 from src.core.logger import logger
 
 
@@ -74,8 +74,7 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
 def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     """Fetch popular crypto assets from database."""
     raw_assets = r.get_crypto_assets(db, POPULAR_CRYPTO_ASSETS)
-    serialized_assets = [sch.PopularAssetSchema.model_validate(asset) for asset in raw_assets]
-    return sch.PopularAssetsResponseSchema(assets=serialized_assets)
+    return utils.serialize_popular_assets_response(raw_assets)
 
 
 def get_fear_and_greed_index_data(db: Session) -> sch.FearAndGreedIndexRespone:
@@ -113,7 +112,7 @@ async def refresh_fear_and_greed_index_manually(
 
 
 
-async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, redis: Redis):
+async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, redis: Redis) -> sch.PopularAssetsResponseSchema:
     """Refresh popular assets from CoinGecko, at most once per cooldown period."""
     cooldown_minutes = CACHE_TIME["CG_popular_asset_refresh"]
     try:
@@ -124,7 +123,7 @@ async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, r
                 status_code=429,
                 detail=f"Popular assets can be refreshed once every {cooldown_minutes} minutes",
                 notification_code="ASSET_MANUAL_REFRESH_TIMEOUT",
-                headers={"Retry-After": str(max(retry_after, 1))},
+                headers={"Retry-After": str(f"{max(retry_after, 1)} seconds")},
             )
     except RedisError as e:
         logger.error(f"Redis unavailable while checking refresh cooldown: {e}")
@@ -132,8 +131,9 @@ async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, r
 
     refreshed = False
     try:
-        await fetch_and_save_assets(ck_client, db, POPULAR_CRYPTO_ASSETS)
+        refreshed_assets = await fetch_and_save_assets(ck_client, db, POPULAR_CRYPTO_ASSETS)
         refreshed = True
+        return utils.serialize_popular_assets_response(refreshed_assets)
     finally:
         if not refreshed:
             await _release_refresh_cooldown_safely(redis)

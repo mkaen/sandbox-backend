@@ -29,8 +29,8 @@ async def refresh_asset_info_manually(
     ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],
     redis: Annotated[Redis, Depends(get_redis)],
     _: Annotated[User, Depends(require_admin)],
-):
-    await s.refresh_asset_info_manually(ck_client, db, redis)
+) -> PopularAssetsResponseSchema:
+    return await s.refresh_asset_info_manually(ck_client, db, redis)
 
 
 @crypto_router_v1.get("/fear-and-greed-index", status_code=200, summary="Fetch Fear and Greed index from server")
