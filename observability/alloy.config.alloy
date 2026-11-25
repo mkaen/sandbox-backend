@@ -1,4 +1,4 @@
-// Collect Docker logs from sandbox-backend app containers and ship them to Loki.
+// Collect Docker logs from sandbox-backend app and scheduler containers and ship them to Loki.
 
 discovery.docker "linux" {
   host = "unix:///var/run/docker.sock"
@@ -9,7 +9,7 @@ discovery.relabel "sandbox_backend" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/sandbox-backend-(dev|prod)"
+    regex         = "/sandbox-backend-(dev|prod)(-scheduler)?"
     action        = "keep"
   }
 

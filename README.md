@@ -203,7 +203,7 @@ docker compose -f docker-compose.observability.yml up -d
 | Alloy UI | http://localhost:12345 | — |
 | Loki API | http://localhost:3100 | — |
 
-Alloy watches Docker containers named `sandbox-backend-dev` or `sandbox-backend-prod` via the Docker socket.
+Alloy watches Docker containers `sandbox-backend-dev`, `sandbox-backend-prod`, and their `*-scheduler` siblings via the Docker socket.
 
 ### 3. View logs in Grafana
 
@@ -226,7 +226,11 @@ Alloy watches Docker containers named `sandbox-backend-dev` or `sandbox-backend-
 {service="sandbox-backend"} | json | request_id="<paste-id-from-response-header>"
 ```
 
-Generate traffic with API calls (or `developer_assets/user_authorization.http`) so request logs appear.
+```logql
+{service="sandbox-backend-scheduler"} | json | message =~ "Scheduler job.*"
+```
+
+Generate traffic with API calls (or `developer_assets/user_authorization.http`) so request logs appear. Cron job logs come from the scheduler container (`service="sandbox-backend-scheduler"`).
 
 ### Stop
 
