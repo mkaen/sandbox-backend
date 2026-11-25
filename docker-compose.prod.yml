@@ -48,7 +48,7 @@ services:
         condition: service_healthy
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: sandbox-backend-prod-redis
     restart: unless-stopped
     # Only the refresh cooldown lives here, so persistence is disabled. Not published to the host.

@@ -28,7 +28,7 @@ services:
         condition: service_healthy
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: sandbox-backend-dev-redis
     ports:
       # Exposed on localhost only, so you can also run uvicorn on the host (REDIS_URL=redis://localhost:6379/0).
