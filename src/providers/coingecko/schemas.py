@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import datetime
 
 from src.constants import CryptoSentiment
@@ -35,6 +35,12 @@ class CoinDataResponse(BaseModel):
 class FearAndGreedIndexPayload(BaseModel):
     value: int = Field(ge=0, le=100)
     sentiment: CryptoSentiment
+
+    @field_validator("sentiment", mode="before")
+    @classmethod
+    def normalize_sentiment(cls, value):
+        """CoinGecko sends lowercase sentiment (e.g. "extreme_fear"); our enum values are uppercase."""
+        return value.upper() if isinstance(value, str) else value
 
 
 class GlobalMarketData(BaseModel):

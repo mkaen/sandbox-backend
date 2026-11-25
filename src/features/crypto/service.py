@@ -78,6 +78,10 @@ def get_popular_assets(db: Session) -> sch.PopularAssetsResponseSchema:
     return sch.PopularAssetsResponseSchema(assets=serialized_assets)
 
 
+def get_fear_and_greed_index_data(db: Session) -> sch.FearAndGreedIndexRespone:
+    return sch.FearAndGreedIndexRespone.model_validate(r.get_latest_fear_and_greed_data(db))
+
+
 async def refresh_fear_and_greed_index_manually(
     ck_client: CoinGeckoClient, db: Session, redis: Redis,
 ) -> sch.FearAndGreedIndexRespone:

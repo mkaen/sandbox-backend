@@ -18,6 +18,16 @@ class CoinGeckoGlobalResponseTests(unittest.TestCase):
         self.assertEqual(parsed.data.fear_and_greed_index.sentiment, CryptoSentiment.EXTREME_FEAR)
         self.assertEqual(parsed.data.updated_at, 1795553626)
 
+    def test_accepts_uppercase_sentiment(self):
+        payload = {
+            "data": {
+                "updated_at": 1795553626,
+                "fear_and_greed_index": {"value": 19, "sentiment": "EXTREME_FEAR"},
+            }
+        }
+        parsed = CoinGeckoGlobalResponse.model_validate(payload)
+        self.assertEqual(parsed.data.fear_and_greed_index.sentiment, CryptoSentiment.EXTREME_FEAR)
+
 
 if __name__ == "__main__":
     unittest.main()

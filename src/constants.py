@@ -33,8 +33,8 @@ CACHE_TIME = {
 }
 
 class CryptoSentiment(Enum):
-    EXTREME_FEAR = "extreme_fear"
-    FEAR = "fear"
-    NEUTRAL = "neutral"
-    GREED = "greed"
-    EXTREME_GREED = "extreme_greed"
+    EXTREME_FEAR = "EXTREME_FEAR"
+    FEAR = "FEAR"
+    NEUTRAL = "NEUTRAL"
+    GREED = "GREED"
+    EXTREME_GREED = "EXTREME_GREED"

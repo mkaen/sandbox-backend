@@ -33,7 +33,12 @@ async def refresh_asset_info_manually(
     await s.refresh_asset_info_manually(ck_client, db, redis)
 
 
-@crypto_router_v1.get("/refresh-fear-and-greed", status_code=200, summary="Refresh and update fear and greed index manually")
+@crypto_router_v1.get("/fear-and-greed-index", status_code=200, summary="Fetch Fear and Greed index from server")
+async def get_fear_and_greed_index(db: Annotated[Session, Depends(get_db)],) -> FearAndGreedIndexRespone:
+    return s.get_fear_and_greed_index_data(db)
+
+
+@crypto_router_v1.post("/refresh-fear-and-greed", status_code=200, summary="Refresh and update fear and greed index manually")
 async def refresh_fear_and_greed_index_manually(
     db: Annotated[Session, Depends(get_db)],
     ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],

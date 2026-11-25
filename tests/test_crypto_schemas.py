@@ -18,7 +18,7 @@ class FearAndGreedIndexResponseSchemaTests(unittest.TestCase):
             {
                 "updatedAt": "15:30 24.11.2026",
                 "value": 19,
-                "sentiment": "extreme_fear",
+                "sentiment": "EXTREME_FEAR",
             },
         )
 

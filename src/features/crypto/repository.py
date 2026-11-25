@@ -67,3 +67,7 @@ def save_fear_and_greed_index(db: Session, data: FearAndGreedIndex) -> FearAndGr
     db.refresh(data)
     return data
 
+
+def get_latest_fear_and_greed_data(db: Session) -> FearAndGreedIndex:
+    """Get latest fear and greed index value, sentiment and updated time."""
+    return db.query(FearAndGreedIndex).order_by(FearAndGreedIndex.created_at.desc()).first()
