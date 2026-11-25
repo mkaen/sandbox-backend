@@ -1,6 +1,12 @@
 import asyncio
 import signal
 
+from apscheduler.events import (
+    EVENT_JOB_ERROR,
+    EVENT_JOB_EXECUTED,
+    EVENT_JOB_MISSED,
+    EVENT_JOB_SUBMITTED,
+)
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from src.config import settings
@@ -10,6 +16,18 @@ from src.scheduler.registry import (
     JOBS,
     cron_trigger_for,
 )
+
+
+def _log_scheduler_event(event) -> None:
+    job_id = getattr(event, "job_id", None)
+    if event.code == EVENT_JOB_SUBMITTED:
+        logger.info("Scheduler job submitted (will run): %s", job_id)
+    elif event.code == EVENT_JOB_EXECUTED:
+        logger.info("Scheduler job executed successfully: %s", job_id)
+    elif event.code == EVENT_JOB_MISSED:
+        logger.warning("Scheduler job missed run: %s", job_id)
+    elif event.code == EVENT_JOB_ERROR:
+        logger.error("Scheduler job raised: %s — %s", job_id, getattr(event, "exception", None))
 
 
 def _register_jobs(scheduler: AsyncIOScheduler) -> None:
@@ -32,6 +50,10 @@ async def run_scheduler() -> None:
         return
 
     scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
+    scheduler.add_listener(
+        _log_scheduler_event,
+        EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED | EVENT_JOB_MISSED | EVENT_JOB_ERROR,
+    )
     _register_jobs(scheduler)
     scheduler.start()
     logger.info("Scheduler started (timezone=%s)", settings.TIMEZONE)
