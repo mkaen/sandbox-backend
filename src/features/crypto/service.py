@@ -95,7 +95,7 @@ async def refresh_fear_and_greed_index_manually(
             raise WNCHTTPException(
                 status_code=429,
                 detail=f"Fear and Greed Index can be refreshed once every {cooldown_minutes} minutes",
-                notification_code="FEAR_AND_GREED_INDEX_REFRESH_TIMEOUT",
+                notification_code="FEAR_AND_GREED_INDEX_REFRESH_LIMITED",
                 headers={"Retry-After": str(max(retry_after, 1))},
             )
     except RedisError as e:
