@@ -58,5 +58,24 @@ services:
       timeout: 5s
       retries: 5
 
+  scheduler:
+    profiles: ["scheduler"]
+    build: .
+    container_name: sandbox-backend-dev-scheduler
+    labels:
+      logging.service: sandbox-backend-scheduler
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: development
+      REDIS_URL: redis://redis:6379/0
+    command: python -m src.scheduler.main
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:

@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = 'INFO'
     LOG_JSON: bool = True
     TIMEZONE: str = "Europe/Tallinn"
+    SCHEDULER_ENABLED: bool = True
+    CRON_POPULAR_ASSETS: str = "1 2,6,10,14,18,22 * * *?"
+    CRON_FEAR_AND_GREED: str = "0 0,12 * * *"
 
     @field_validator("DATABASE_URL")
     @classmethod
