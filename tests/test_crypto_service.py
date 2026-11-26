@@ -90,7 +90,7 @@ class RefreshFearAndGreedIndexManuallyTests(unittest.IsolatedAsyncioTestCase):
         self.ck_client = MagicMock()
         self.redis = AsyncMock()
 
-    @patch("src.features.crypto.service.fetch_and_save_fear_and_greed_index", new_callable=AsyncMock)
+    @patch("src.features.crypto.service.update_fear_and_greed_index", new_callable=AsyncMock)
     async def test_refresh_uses_its_own_cooldown_key(self, fetch):
         self.redis.set.return_value = True
         fetch.return_value = MagicMock()
@@ -104,7 +104,7 @@ class RefreshFearAndGreedIndexManuallyTests(unittest.IsolatedAsyncioTestCase):
         )
         fetch.assert_awaited_once_with(self.ck_client, self.db)
 
-    @patch("src.features.crypto.service.fetch_and_save_fear_and_greed_index", new_callable=AsyncMock)
+    @patch("src.features.crypto.service.update_fear_and_greed_index", new_callable=AsyncMock)
     async def test_failed_refresh_releases_only_its_own_cooldown(self, fetch):
         self.redis.set.return_value = True
         fetch.side_effect = HTTPException(status_code=502, detail="Unable to fetch Fear and Greed index from CoinGecko")

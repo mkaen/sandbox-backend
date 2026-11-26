@@ -8,6 +8,7 @@ from src.core.redis import get_redis
 from src.features.crypto import service as s
 from src.db.database import get_db
 from src.db.models import User
+from src.features.auth.dependencies import get_current_user
 from src.features.users.dependencies import require_admin
 from src.providers.coingecko.client import CoinGeckoClient
 from src.providers.coingecko.dependencies import get_coingecko_client
@@ -44,5 +45,6 @@ async def refresh_fear_and_greed_index_manually(
     ck_client: Annotated[CoinGeckoClient, Depends(get_coingecko_client)],
     redis: Annotated[Redis, Depends(get_redis)],
     _: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> FearAndGreedIndexRespone:
-    return await s.refresh_fear_and_greed_index_manually(ck_client, db, redis)
+    return await s.refresh_fear_and_greed_index_manually(ck_client, db, redis, current_user)

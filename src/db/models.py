@@ -70,3 +70,4 @@ class FearAndGreedIndex(Base):
     created_at = Column(DateTime, nullable=False, index=True)
     value = Column(Integer, nullable=False)
     sentiment = Column(Enum(CryptoSentiment, name='sentiment'), nullable=False)
+    created_by = Column(String, nullable=False)

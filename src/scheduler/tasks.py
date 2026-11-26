@@ -16,5 +16,5 @@ async def refresh_fear_and_greed() -> None:
     job_id = "job_fear_and_greed"
     logger.info("Scheduler job started: %s", job_id)
     async with job_resources() as (db, client):
-        await crypto_service.fetch_and_save_fear_and_greed_index(client, db)
+        await crypto_service.update_fear_and_greed_index(client, db)
     logger.info("Scheduler job finished: %s", job_id)

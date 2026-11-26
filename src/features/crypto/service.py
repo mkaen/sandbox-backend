@@ -13,10 +13,11 @@ from src.features.crypto import repository as r
 from src.db.models import CryptoAsset, FearAndGreedIndex
 from src.features.crypto import schemas as sch, utils
 from src.core.logger import logger
+from src.db.models import User
 
 
 
-async def fetch_and_save_fear_and_greed_index(coingecko: CoinGeckoClient, db: Session):
+async def update_fear_and_greed_index(coingecko: CoinGeckoClient, db: Session, principal="System"):
     """
     Fetch Fear and Greed Index data from Coingecko and update database.
     
@@ -30,6 +31,7 @@ async def fetch_and_save_fear_and_greed_index(coingecko: CoinGeckoClient, db: Se
             created_at=created_at,
             value=index.value,
             sentiment=index.sentiment,
+            created_by=principal
         )
         saved = r.save_fear_and_greed_index(db, fetched_data)
         logger.info("SUCCESS: Fear and Greed Index refresh")
@@ -82,7 +84,7 @@ def get_fear_and_greed_index_data(db: Session) -> sch.FearAndGreedIndexRespone:
 
 
 async def refresh_fear_and_greed_index_manually(
-    ck_client: CoinGeckoClient, db: Session, redis: Redis,
+    ck_client: CoinGeckoClient, db: Session, redis: Redis, user: User
 ) -> sch.FearAndGreedIndexRespone:
     """Refresh Fear and Greed Index from CoinGecko, at most once per cooldown period."""
 
@@ -104,7 +106,7 @@ async def refresh_fear_and_greed_index_manually(
 
     refreshed = False
     try:
-        response = await fetch_and_save_fear_and_greed_index(ck_client, db)
+        response = await update_fear_and_greed_index(ck_client, db, str(user))
         refreshed = True
         return sch.FearAndGreedIndexRespone.model_validate(response)
     finally:
