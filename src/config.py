@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     LOG_JSON: bool = True
     TIMEZONE: str = "Europe/Tallinn"
     SCHEDULER_ENABLED: bool = True
-    CRON_POPULAR_ASSETS: str = "0,30 * * * *"  # "1 2,6,10,14,18,22 * * *?" - iga 4h tagant + 1min
+    CRON_POPULAR_ASSETS: str = "0,15,30,45 * * * *"  # "1 2,6,10,14,18,22 * * *?" - iga 4h tagant + 1min
     CRON_FEAR_AND_GREED: str = "0 0,12 * * *"
 
     @field_validator("DATABASE_URL")

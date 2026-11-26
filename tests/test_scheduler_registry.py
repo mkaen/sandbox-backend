@@ -17,7 +17,7 @@ class SchedulerRegistryTests(unittest.TestCase):
         by_id = {job.id: job.cron for job in JOBS}
         self.assertEqual(by_id["job_popular_assets"], settings.CRON_POPULAR_ASSETS)
         self.assertEqual(by_id["job_fear_and_greed"], settings.CRON_FEAR_AND_GREED)
-        self.assertEqual(settings.CRON_POPULAR_ASSETS, "0,30 * * * *")
+        self.assertEqual(settings.CRON_POPULAR_ASSETS, "0,15,30,45 * * * *")
         self.assertEqual(settings.CRON_FEAR_AND_GREED, "0 0,12 * * *")
 
     def test_get_job_known_and_unknown(self) -> None:

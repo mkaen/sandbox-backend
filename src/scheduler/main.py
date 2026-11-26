@@ -23,11 +23,20 @@ def _log_scheduler_event(event) -> None:
     if event.code == EVENT_JOB_SUBMITTED:
         logger.info("Scheduler job submitted (will run): %s", job_id)
     elif event.code == EVENT_JOB_EXECUTED:
-        logger.info("Scheduler job executed successfully: %s", job_id)
+        logger.info("Scheduler job completed: %s", job_id)
     elif event.code == EVENT_JOB_MISSED:
         logger.warning("Scheduler job missed run: %s", job_id)
     elif event.code == EVENT_JOB_ERROR:
-        logger.error("Scheduler job raised: %s — %s", job_id, getattr(event, "exception", None))
+        exc = getattr(event, "exception", None)
+        if exc is not None:
+            logger.error(
+                "Scheduler job failed: %s — %s",
+                job_id,
+                exc,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
+        else:
+            logger.error("Scheduler job failed: %s", job_id)
 
 
 def _register_jobs(scheduler: AsyncIOScheduler) -> None:

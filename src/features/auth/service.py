@@ -59,7 +59,7 @@ def register_user(registration_data: RegisterRequestSchema, response: Response, 
 
 
 def authenticate_user(data: LoginRequestSchema, response: Response, db: Session):
-    logger.info("Authenticate user")
+    logger.debug("Authenticate user")
     user = get_user_by_email(db, data.email)
 
     if not user or not user.is_active:
@@ -71,7 +71,7 @@ def authenticate_user(data: LoginRequestSchema, response: Response, db: Session)
         raise HTTPNotificationExc(status_code=401, detail="Failed to log in", notification_code="LOGIN_FAILED")
 
     _issue_auth_tokens(response, db, user.id)
-    logger.info(f"User {user} login successed")
+    logger.info(f"Login SUCCESS: {user}")
 
     return _user_response(user)
 
