@@ -32,7 +32,7 @@ async def fetch_and_save_fear_and_greed_index(coingecko: CoinGeckoClient, db: Se
             sentiment=index.sentiment,
         )
         saved = r.save_fear_and_greed_index(db, fetched_data)
-        logger.info("SUCCESS: Fetched Fear and Greed Index from CoinGecko")
+        logger.info("SUCCESS: Fear and Greed Index refresh")
         return saved
     except CoinGeckoError as e:
         raise HTTPException(status_code=502, detail="Unable to fetch Fear and Greed index from CoinGecko") from e
@@ -65,7 +65,7 @@ async def fetch_and_save_assets(coingecko: CoinGeckoClient, db: Session, assets:
             )
             fetched_coin = r.save_asset_info(db, fetched_coin)
             fetched_assets.append(fetched_coin)
-        logger.info(f"Fetched total {len(fetched_assets)} assets from CoinGecko.")
+        logger.info(f"Fetched and updated total {len(fetched_assets)} assets from CoinGecko.")
         return fetched_assets
     except CoinGeckoError as e:
         raise HTTPException(status_code=502, detail="Unable to fetch crypto prices") from e
@@ -87,10 +87,11 @@ async def refresh_fear_and_greed_index_manually(
     """Refresh Fear and Greed Index from CoinGecko, at most once per cooldown period."""
 
     cooldown_minutes = CACHE_TIME["CG_fear_and_greed_index_refresh"]
+    cooldown_key = r.FEAR_AND_GREED_REFRESH_COOLDOWN_KEY
     try:
-        acquired = await r.acquire_refresh_cooldown(redis, cooldown_minutes * 60)
+        acquired = await r.acquire_refresh_cooldown(redis, cooldown_key, cooldown_minutes * 60)
         if not acquired:
-            retry_after = await r.get_refresh_cooldown_ttl(redis)
+            retry_after = await r.get_refresh_cooldown_ttl(redis, cooldown_key)
             raise WNCHTTPException(
                 status_code=429,
                 detail=f"Fear and Greed Index can be refreshed once every {cooldown_minutes} minutes",
@@ -108,22 +109,23 @@ async def refresh_fear_and_greed_index_manually(
         return sch.FearAndGreedIndexRespone.model_validate(response)
     finally:
         if not refreshed:
-            await _release_refresh_cooldown_safely(redis)
+            await _release_refresh_cooldown_safely(redis, cooldown_key)
 
 
 
 async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, redis: Redis) -> sch.PopularAssetsResponseSchema:
     """Refresh popular assets from CoinGecko, at most once per cooldown period."""
     cooldown_minutes = CACHE_TIME["CG_popular_asset_refresh"]
+    cooldown_key = r.POPULAR_ASSETS_REFRESH_COOLDOWN_KEY
     try:
-        acquired = await r.acquire_refresh_cooldown(redis, cooldown_minutes * 60)
+        acquired = await r.acquire_refresh_cooldown(redis, cooldown_key, cooldown_minutes * 60)
         if not acquired:
-            retry_after = await r.get_refresh_cooldown_ttl(redis)
+            retry_after = await r.get_refresh_cooldown_ttl(redis, cooldown_key)
             raise WNCHTTPException(
                 status_code=429,
                 detail=f"Popular assets can be refreshed once every {cooldown_minutes} minutes",
                 notification_code="ASSET_MANUAL_REFRESH_TIMEOUT",
-                headers={"Retry-After": str(f"{max(retry_after, 1)} seconds")},
+                headers={"Retry-After": str(max(retry_after, 1))},
             )
     except RedisError as e:
         logger.error(f"Redis unavailable while checking refresh cooldown: {e}")
@@ -136,12 +138,12 @@ async def refresh_asset_info_manually(ck_client: CoinGeckoClient, db: Session, r
         return utils.serialize_popular_assets_response(refreshed_assets)
     finally:
         if not refreshed:
-            await _release_refresh_cooldown_safely(redis)
+            await _release_refresh_cooldown_safely(redis, cooldown_key)
 
 
-async def _release_refresh_cooldown_safely(redis: Redis) -> None:
+async def _release_refresh_cooldown_safely(redis: Redis, key: str) -> None:
     """Allow a retry after a failed refresh; never mask the original error."""
     try:
-        await r.release_refresh_cooldown(redis)
+        await r.release_refresh_cooldown(redis, key)
     except RedisError as e:
         logger.error(f"Could not release refresh cooldown: {e}")

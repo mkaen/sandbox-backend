@@ -22,7 +22,9 @@ class RefreshAssetInfoManuallyTests(unittest.IsolatedAsyncioTestCase):
 
         await service.refresh_asset_info_manually(self.ck_client, self.db, self.redis)
 
-        self.redis.set.assert_awaited_once_with(repository.REFRESH_COOLDOWN_KEY, "1", nx=True, ex=COOLDOWN_SECONDS)
+        self.redis.set.assert_awaited_once_with(
+            repository.POPULAR_ASSETS_REFRESH_COOLDOWN_KEY, "1", nx=True, ex=COOLDOWN_SECONDS
+        )
         fetch.assert_awaited_once_with(self.ck_client, self.db, POPULAR_CRYPTO_ASSETS)
         self.redis.delete.assert_not_awaited()
 
@@ -58,7 +60,7 @@ class RefreshAssetInfoManuallyTests(unittest.IsolatedAsyncioTestCase):
             await service.refresh_asset_info_manually(self.ck_client, self.db, self.redis)
 
         self.assertEqual(ctx.exception.status_code, 502)
-        self.redis.delete.assert_awaited_once_with(repository.REFRESH_COOLDOWN_KEY)
+        self.redis.delete.assert_awaited_once_with(repository.POPULAR_ASSETS_REFRESH_COOLDOWN_KEY)
 
     @patch("src.features.crypto.service.fetch_and_save_assets", new_callable=AsyncMock)
     async def test_failed_release_does_not_mask_original_error(self, fetch):
@@ -80,6 +82,42 @@ class RefreshAssetInfoManuallyTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(ctx.exception.status_code, 503)
         fetch.assert_not_awaited()
+
+
+class RefreshFearAndGreedIndexManuallyTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.db = MagicMock()
+        self.ck_client = MagicMock()
+        self.redis = AsyncMock()
+
+    @patch("src.features.crypto.service.fetch_and_save_fear_and_greed_index", new_callable=AsyncMock)
+    async def test_refresh_uses_its_own_cooldown_key(self, fetch):
+        self.redis.set.return_value = True
+        fetch.return_value = MagicMock()
+
+        with patch.object(service.sch.FearAndGreedIndexRespone, "model_validate"):
+            await service.refresh_fear_and_greed_index_manually(self.ck_client, self.db, self.redis)
+
+        self.redis.set.assert_awaited_once_with(
+            repository.FEAR_AND_GREED_REFRESH_COOLDOWN_KEY, "1", nx=True,
+            ex=CACHE_TIME["CG_fear_and_greed_index_refresh"] * 60,
+        )
+        fetch.assert_awaited_once_with(self.ck_client, self.db)
+
+    @patch("src.features.crypto.service.fetch_and_save_fear_and_greed_index", new_callable=AsyncMock)
+    async def test_failed_refresh_releases_only_its_own_cooldown(self, fetch):
+        self.redis.set.return_value = True
+        fetch.side_effect = HTTPException(status_code=502, detail="Unable to fetch Fear and Greed index from CoinGecko")
+
+        with self.assertRaises(HTTPException):
+            await service.refresh_fear_and_greed_index_manually(self.ck_client, self.db, self.redis)
+
+        self.redis.delete.assert_awaited_once_with(repository.FEAR_AND_GREED_REFRESH_COOLDOWN_KEY)
+
+    def test_cooldown_keys_are_independent(self):
+        self.assertNotEqual(
+            repository.FEAR_AND_GREED_REFRESH_COOLDOWN_KEY, repository.POPULAR_ASSETS_REFRESH_COOLDOWN_KEY
+        )
 
 
 if __name__ == "__main__":

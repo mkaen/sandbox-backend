@@ -4,21 +4,22 @@ from sqlalchemy.orm import Session
 from src.db.models import CryptoAsset, FearAndGreedIndex
 from src.core.logger import logger
 
-REFRESH_COOLDOWN_KEY = "crypto:popular-assets:refresh-cooldown"
+POPULAR_ASSETS_REFRESH_COOLDOWN_KEY = "crypto:popular-assets:refresh-cooldown"
+FEAR_AND_GREED_REFRESH_COOLDOWN_KEY = "crypto:fear-and-greed:refresh-cooldown"
 
 
-async def acquire_refresh_cooldown(redis: Redis, seconds: int) -> bool:
+async def acquire_refresh_cooldown(redis: Redis, key: str, seconds: int) -> bool:
     """Atomically start the cooldown. Returns False if a refresh is already running or cooling down."""
-    return bool(await redis.set(REFRESH_COOLDOWN_KEY, "1", nx=True, ex=seconds))
+    return bool(await redis.set(key, "1", nx=True, ex=seconds))
 
 
-async def get_refresh_cooldown_ttl(redis: Redis) -> int:
+async def get_refresh_cooldown_ttl(redis: Redis, key: str) -> int:
     """Remaining cooldown in seconds (0 if the key is gone)."""
-    return max(await redis.ttl(REFRESH_COOLDOWN_KEY), 0)
+    return max(await redis.ttl(key), 0)
 
 
-async def release_refresh_cooldown(redis: Redis) -> None:
-    await redis.delete(REFRESH_COOLDOWN_KEY)
+async def release_refresh_cooldown(redis: Redis, key: str) -> None:
+    await redis.delete(key)
 
 
 def get_crypto_assets(db: Session, assets: list[str]) -> list[CryptoAsset]:
